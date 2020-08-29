@@ -1,0 +1,17 @@
+language: python
+python:
+  - "3.8"
+
+before_install:
+  - sudo apt-get update
+
+install:
+  - pip install pytest-cov coveralls coverage
+  - pip install -r requirements.txt
+  - pip install -e .
+
+script:
+  - python -m pytest --cov=src/kompressor tests/*
+
+after_script:
+  - coveralls

@@ -1,0 +1,6 @@
+mock
+pytest
+numpy
+nptyping
+pandas
+h5py
