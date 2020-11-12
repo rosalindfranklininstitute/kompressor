@@ -21,5 +21,7 @@
 # SOFTWARE.
 
 
-VERSION = 'v1.0a'
+from kompressor import utils
+from kompressor import utils_2d, utils_3d
 
+VERSION = 'v1.0a'

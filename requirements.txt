@@ -4,3 +4,5 @@ numpy
 nptyping
 pandas
 h5py
+jax
+jaxlib

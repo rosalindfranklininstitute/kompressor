@@ -21,26 +21,20 @@
 # SOFTWARE.
 
 
-from setuptools import setup, find_packages
+import jax.numpy as jnp
 
 
-setup(
-    version='1.0a',
-    name='kompressor',
-    description='A neural compression framework built on top of JAX.',
-    url='https://github.com/JossWhittle/Kompressor',
-    author='Joss Whittle',
-    author_email='joss.whittle@rfi.ac.uk',
-    packages=find_packages('src'),
-    package_dir={'': 'src'},
-    test_suite='tests',
-    classifiers=[
-        'Development Status :: 2 - Pre-Alpha',
-        'License :: OSI Approved :: MIT License',
-        'Natural Language :: English',
-        'Programming Language :: Python :: 3.8',
-        'Operating System :: POSIX :: Linux',
-    ],
-    license='Apache License, Version 2.0',
-    zip_safe=False,
-)
+def encode_values_uint8(pred, gt):
+    return jnp.uint8(((jnp.int32(gt) - jnp.int32(pred)) + 256) % 256)
+
+
+def decode_values_uint8(pred, delta):
+    return jnp.uint8(((jnp.int32(pred) + jnp.int32(delta)) + 256) % 256)
+
+
+def encode_values_uint16(pred, gt):
+    return jnp.uint16(((jnp.int32(gt) - jnp.int32(pred)) + 65536) % 65536)
+
+
+def decode_values_uint16(pred, delta):
+    return jnp.uint16(((jnp.int32(pred) + jnp.int32(delta)) + 65536) % 65536)
