@@ -23,31 +23,73 @@
 
 import jax.numpy as jnp
 
-from enum import Enum
+from enum import Enum, auto
 
 
 class Neighbors(Enum):
-    L = 0
-    R = 1
-    U = 2
-    D = 3
-    F = 4
-    B = 5
-    C = 6
+    # Central plus
+    L  = auto()
+    R  = auto()
+    U  = auto()
+    D  = auto()
+    F  = auto()
+    B  = auto()
+    C  = auto()
+
+    # Four corners of central z-axis plane
+    Z0 = auto()
+    Z1 = auto()
+    Z2 = auto()
+    Z3 = auto()
+
+    # Four corners of central y-axis plane
+    Y0 = auto()
+    Y1 = auto()
+    Y2 = auto()
+    Y3 = auto()
+
+    # Four corners of central x-axis plane
+    X0 = auto()
+    X1 = auto()
+    X2 = auto()
+    X3 = auto()
 
 
 def targets_from_highres(highres):
     # Slice out each value of the pluses
-    lmap = highres[:,  1::2,  1::2, :-1:2]
-    rmap = highres[:,  1::2,  1::2,  2::2]
-    umap = highres[:,  1::2, :-1:2,  1::2]
-    dmap = highres[:,  1::2,  2::2,  1::2]
-    fmap = highres[:, :-1:2,  1::2,  1::2]
-    bmap = highres[:,  2::2,  1::2,  1::2]
-    cmap = highres[:,  1::2,  1::2,  1::2]
+    lmap  = highres[:,  1::2,  1::2, :-1:2]
+    rmap  = highres[:,  1::2,  1::2,  2::2]
+    umap  = highres[:,  1::2, :-1:2,  1::2]
+    dmap  = highres[:,  1::2,  2::2,  1::2]
+    fmap  = highres[:, :-1:2,  1::2,  1::2]
+    bmap  = highres[:,  2::2,  1::2,  1::2]
+    cmap  = highres[:,  1::2,  1::2,  1::2]
 
-    # Stack the vectors LRUDFBC order with dim [B,D,H,W,7,...]
-    targets = jnp.stack([lmap, rmap, umap, dmap, fmap, bmap, cmap], axis=-2)
+    # Slice out the four corners of the central plane on the z-axis
+    z0map = highres[:,  1::2, :-1:2, :-1:2]
+    z1map = highres[:,  1::2, :-1:2,  2::2]
+    z2map = highres[:,  1::2,  2::2,  2::2]
+    z3map = highres[:,  1::2,  2::2, :-1:2]
+
+    # Slice out the four corners of the central plane on the y-axis
+    y0map = highres[:, :-1:2,  1::2, :-1:2]
+    y1map = highres[:, :-1:2,  1::2,  2::2]
+    y2map = highres[:,  2::2,  1::2,  2::2]
+    y3map = highres[:,  2::2,  1::2, :-1:2]
+
+    # Slice out the four corners of the central plane on the x-axis
+    x0map = highres[:, :-1:2, :-1:2,  1::2]
+    x1map = highres[:, :-1:2,  2::2,  1::2]
+    x2map = highres[:,  2::2,  2::2,  1::2]
+    x3map = highres[:,  2::2, :-1:2,  1::2]
+
+    # Stack the vectors LRUDFBC order with dim [B,D,H,W,19,...]
+    targets = jnp.stack([
+        lmap, rmap, umap, dmap, fmap, bmap, cmap,
+        z0map, z1map, z2map, z3map,
+        y0map, y1map, y2map, y3map,
+        x0map, x1map, x2map, x3map
+    ], axis=-2)
 
     return targets
 
@@ -58,7 +100,7 @@ def lowres_from_highres(highres):
 
 
 def maps_from_predictions(predictions):
-    # Given a tensor of 7 predictions for each neighborhood, decode the [B,D,H,W,7,...] predictions into four maps
+    # Given a tensor of predictions for each neighborhood, decode the [B,D,H,W,19,...] predictions into 7 maps
     # Averages predictions when there are two for a pixel from adjacent neighborhoods.
 
     # Determine the size of the highres image given the size of the predictions
@@ -89,7 +131,40 @@ def maps_from_predictions(predictions):
     # Map for containing aggregated predictions of the centre of the pluses
     cmap = predictions[:, :, :, :, Neighbors.C]
 
-    return lrmap, udmap, fbmap, cmap
+    # Map for containing aggregated predictions of the corners of the central z-axis plane
+    zmap = jnp.zeros((batch_size, pd, ph + 1, pw + 1, *channels), dtype=dtype)
+    zmap = zmap.at[:, :,  :-1,  :-1].add(predictions[:, :, :, :, Neighbors.Z0])  # Top-Left predictions
+    zmap = zmap.at[:, :,  :-1,   1:].add(predictions[:, :, :, :, Neighbors.Z1])  # Top-Right predictions
+    zmap = zmap.at[:, :,   1:,   1:].add(predictions[:, :, :, :, Neighbors.Z2])  # Bottom-Right predictions
+    zmap = zmap.at[:, :,   1:,  :-1].add(predictions[:, :, :, :, Neighbors.Z3])  # Bottom-Left predictions
+    # Normalize Z map to account for front and back value double and quad predictions
+    zmap = zmap.at[:, :, 1:-1, 1:-1].mul(0.25)
+    zmap = zmap.at[:, :, 1:-1, ::(pw + 1)].mul(0.5)
+    zmap = zmap.at[:, :, ::(ph + 1), 1:-1].mul(0.5)
+
+    # Map for containing aggregated predictions of the corners of the central y-axis plane
+    ymap = jnp.zeros((batch_size, pd + 1, ph, pw + 1, *channels), dtype=dtype)
+    ymap = ymap.at[:,  :-1, :,  :-1].add(predictions[:, :, :, :, Neighbors.Y0])  # Top-Left predictions
+    ymap = ymap.at[:,  :-1, :,   1:].add(predictions[:, :, :, :, Neighbors.Y1])  # Top-Right predictions
+    ymap = ymap.at[:,   1:, :,   1:].add(predictions[:, :, :, :, Neighbors.Y2])  # Bottom-Right predictions
+    ymap = ymap.at[:,   1:, :,  :-1].add(predictions[:, :, :, :, Neighbors.Y3])  # Bottom-Left predictions
+    # Normalize Y map to account for front and back value double and quad predictions
+    ymap = ymap.at[:, 1:-1, :, 1:-1].mul(0.25)
+    ymap = ymap.at[:, 1:-1, :, ::(pw + 1)].mul(0.5)
+    ymap = ymap.at[:, ::(pd + 1), :, 1:-1].mul(0.5)
+
+    # Map for containing aggregated predictions of the corners of the central x-axis plane
+    xmap = jnp.zeros((batch_size, pd + 1, ph + 1, pw, *channels), dtype=dtype)
+    xmap = xmap.at[:,  :-1,  :-1, :].add(predictions[:, :, :, :, Neighbors.X0])  # Top-Left predictions
+    xmap = xmap.at[:,  :-1,   1:, :].add(predictions[:, :, :, :, Neighbors.X1])  # Top-Right predictions
+    xmap = xmap.at[:,   1:,   1:, :].add(predictions[:, :, :, :, Neighbors.X2])  # Bottom-Right predictions
+    xmap = xmap.at[:,   1:,  :-1, :].add(predictions[:, :, :, :, Neighbors.X3])  # Bottom-Left predictions
+    # Normalize X map to account for front and back value double and quad predictions
+    xmap = xmap.at[:, 1:-1, 1:-1, :].mul(0.25)
+    xmap = xmap.at[:, 1:-1, ::(ph + 1), :].mul(0.5)
+    xmap = xmap.at[:, ::(pd + 1), 1:-1, :].mul(0.5)
+
+    return lrmap, udmap, fbmap, cmap, zmap, ymap, xmap
 
 
 def maps_from_highres(highres):
@@ -99,10 +174,15 @@ def maps_from_highres(highres):
     fbmap = highres[:,  ::2, 1::2, 1::2]
     cmap  = highres[:, 1::2, 1::2, 1::2]
 
-    return lrmap, udmap, fbmap, cmap
+    # Extract the central axis corners
+    zmap  = highres[:, 1::2,  ::2,  ::2]
+    ymap  = highres[:,  ::2, 1::2,  ::2]
+    xmap  = highres[:,  ::2,  ::2, 1::2]
+
+    return lrmap, udmap, fbmap, cmap, zmap, ymap, xmap
 
 
-def highres_from_lowres_and_maps(lowres, lrmap, udmap, fbmap, cmap):
+def highres_from_lowres_and_maps(lowres, lrmap, udmap, fbmap, cmap, zmap, ymap, xmap):
     # Merge together a lowres image and the four maps of known values representing the missing pluses
 
     # Determine the size of the highres image given the size of the lowres
@@ -117,5 +197,8 @@ def highres_from_lowres_and_maps(lowres, lrmap, udmap, fbmap, cmap):
     highres = highres.at[:, 1::2,  ::2, 1::2].set(udmap)   # Apply the values from the up and down of the pluses
     highres = highres.at[:,  ::2, 1::2, 1::2].set(fbmap)   # Apply the values from the front and back of the pluses
     highres = highres.at[:, 1::2, 1::2, 1::2].set(cmap)    # Apply the values from the centre of the pluses
+    highres = highres.at[:, 1::2,  ::2,  ::2].set(zmap)    # Apply the values from the central z-axis plane corners
+    highres = highres.at[:,  ::2, 1::2,  ::2].set(ymap)    # Apply the values from the central y-axis plane corners
+    highres = highres.at[:,  ::2,  ::2, 1::2].set(xmap)    # Apply the values from the central x-axis plane corners
 
     return highres
