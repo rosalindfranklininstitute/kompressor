@@ -23,15 +23,16 @@
 
 import jax.numpy as jnp
 
-from enum import Enum
+from enum import Enum, auto
 
 
 class Neighbors(Enum):
-    L = 0
-    R = 1
-    U = 2
-    D = 3
-    C = 4
+    # Central plus
+    L = auto()
+    R = auto()
+    U = auto()
+    D = auto()
+    C = auto()
 
 
 def targets_from_highres(highres):
