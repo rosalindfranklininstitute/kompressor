@@ -23,16 +23,11 @@
 
 import jax.numpy as jnp
 
-from enum import Enum, auto
+from enum import IntEnum
 
-
-class Neighbors(Enum):
-    # Central plus
-    L = auto()
-    R = auto()
-    U = auto()
-    D = auto()
-    C = auto()
+# For each 2x2 4 pixel neighborhood there are 5 missing pixels to predict,
+# stored in the following consistent order
+Neighbors = IntEnum('Neighbors', ['L', 'R', 'U', 'D', 'C'], start=0)
 
 
 def targets_from_highres(highres):
@@ -44,7 +39,7 @@ def targets_from_highres(highres):
     cmap = highres[:,  1::2,  1::2]
 
     # Stack the vectors LRUDC order with dim [B,H,W,5,...]
-    targets = jnp.stack([lmap, rmap, umap, dmap, cmap], axis=-2)
+    targets = jnp.stack([lmap, rmap, umap, dmap, cmap], axis=3)
 
     return targets
 

@@ -23,36 +23,16 @@
 
 import jax.numpy as jnp
 
-from enum import Enum, auto
+from enum import IntEnum
 
-
-class Neighbors(Enum):
-    # Central plus
-    L  = auto()
-    R  = auto()
-    U  = auto()
-    D  = auto()
-    F  = auto()
-    B  = auto()
-    C  = auto()
-
-    # Four corners of central z-axis plane
-    Z0 = auto()
-    Z1 = auto()
-    Z2 = auto()
-    Z3 = auto()
-
-    # Four corners of central y-axis plane
-    Y0 = auto()
-    Y1 = auto()
-    Y2 = auto()
-    Y3 = auto()
-
-    # Four corners of central x-axis plane
-    X0 = auto()
-    X1 = auto()
-    X2 = auto()
-    X3 = auto()
+# For each 2x2x2 8 voxel neighborhood there are 19 missing voxels to predict,
+# stored in the following consistent order
+Neighbors = IntEnum('Neighbors', [
+    'L', 'R', 'U', 'D', 'F', 'B', 'C',
+    'Z0', 'Z1', 'Z2', 'Z3',
+    'Y0', 'Y1', 'Y2', 'Y3',
+    'X0', 'X1', 'X2', 'X3'
+], start=0)
 
 
 def targets_from_highres(highres):
@@ -89,7 +69,7 @@ def targets_from_highres(highres):
         z0map, z1map, z2map, z3map,
         y0map, y1map, y2map, y3map,
         x0map, x1map, x2map, x3map
-    ], axis=-2)
+    ], axis=4)
 
     return targets
 
@@ -139,8 +119,8 @@ def maps_from_predictions(predictions):
     zmap = zmap.at[:, :,   1:,  :-1].add(predictions[:, :, :, :, Neighbors.Z3])  # Bottom-Left predictions
     # Normalize Z map to account for front and back value double and quad predictions
     zmap = zmap.at[:, :, 1:-1, 1:-1].mul(0.25)
-    zmap = zmap.at[:, :, 1:-1, ::(pw + 1)].mul(0.5)
-    zmap = zmap.at[:, :, ::(ph + 1), 1:-1].mul(0.5)
+    zmap = zmap.at[:, :, 1:-1, ::pw].mul(0.5)
+    zmap = zmap.at[:, :, ::ph, 1:-1].mul(0.5)
 
     # Map for containing aggregated predictions of the corners of the central y-axis plane
     ymap = jnp.zeros((batch_size, pd + 1, ph, pw + 1, *channels), dtype=dtype)
@@ -150,8 +130,8 @@ def maps_from_predictions(predictions):
     ymap = ymap.at[:,   1:, :,  :-1].add(predictions[:, :, :, :, Neighbors.Y3])  # Bottom-Left predictions
     # Normalize Y map to account for front and back value double and quad predictions
     ymap = ymap.at[:, 1:-1, :, 1:-1].mul(0.25)
-    ymap = ymap.at[:, 1:-1, :, ::(pw + 1)].mul(0.5)
-    ymap = ymap.at[:, ::(pd + 1), :, 1:-1].mul(0.5)
+    ymap = ymap.at[:, 1:-1, :, ::pw].mul(0.5)
+    ymap = ymap.at[:, ::pd, :, 1:-1].mul(0.5)
 
     # Map for containing aggregated predictions of the corners of the central x-axis plane
     xmap = jnp.zeros((batch_size, pd + 1, ph + 1, pw, *channels), dtype=dtype)
@@ -161,8 +141,8 @@ def maps_from_predictions(predictions):
     xmap = xmap.at[:,   1:,  :-1, :].add(predictions[:, :, :, :, Neighbors.X3])  # Bottom-Left predictions
     # Normalize X map to account for front and back value double and quad predictions
     xmap = xmap.at[:, 1:-1, 1:-1, :].mul(0.25)
-    xmap = xmap.at[:, 1:-1, ::(ph + 1), :].mul(0.5)
-    xmap = xmap.at[:, ::(pd + 1), 1:-1, :].mul(0.5)
+    xmap = xmap.at[:, 1:-1, ::ph, :].mul(0.5)
+    xmap = xmap.at[:, ::pd, 1:-1, :].mul(0.5)
 
     return lrmap, udmap, fbmap, cmap, zmap, ymap, xmap
 
