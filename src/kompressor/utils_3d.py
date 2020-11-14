@@ -209,9 +209,9 @@ def decode(predictions_fn, decode_fn, lowres, encoded_maps):
     pred_maps = predictions_fn(lowres)
 
     # Correct the predictions using the provided encoded maps
-    gt_maps = [decode_fn(*maps) for maps in zip(pred_maps, encoded_maps)]
+    decoded_maps = [decode_fn(*maps) for maps in zip(pred_maps, encoded_maps)]
 
     # Reconstruct highres image from the corrected true values
-    highres = highres_from_lowres_and_maps(lowres, gt_maps)
+    highres = highres_from_lowres_and_maps(lowres, decoded_maps)
 
     return highres
