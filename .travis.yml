@@ -1,17 +1,19 @@
 language: python
-python:
-  - "3.8"
 
-before_install:
-  - sudo apt-get update
+services:
+  - docker
 
 install:
-  - pip install pytest-cov coveralls coverage
-  - pip install -r requirements.txt
-  - pip install -e .
+  - docker pull $DOCKER_USERNAME/$DOCKER_REPO || true
+  - docker build --pull --cache-from $DOCKER_USERNAME/$DOCKER_REPO --tag $DOCKER_USERNAME/$DOCKER_REPO .
+  - docker run -itd --name env --env-file <(env | grep TRAVIS) -v $(pwd):/tmp/repo/ -w /tmp/repo/ $DOCKER_USERNAME/$DOCKER_REPO
 
 script:
-  - python -m pytest --cov=src/kompressor tests/*
+  - docker exec env pip install -e .
+  - docker exec env python -m pytest --cov=src/kompressor tests/
 
 after_script:
-  - coveralls
+  - docker exec env coveralls
+  - docker stop env
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+  - docker push $DOCKER_USERNAME/$DOCKER_REPO
