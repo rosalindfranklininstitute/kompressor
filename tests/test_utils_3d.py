@@ -37,32 +37,6 @@ class Utils3DTest(unittest.TestCase):
         highres = jnp.arange(np.prod(shape)).reshape(shape)
         return highres
 
-    def test_neighbor_enum(self):
-
-        neighbors = [
-            kom.utils_3d.Neighbors.L,
-            kom.utils_3d.Neighbors.R,
-            kom.utils_3d.Neighbors.U,
-            kom.utils_3d.Neighbors.D,
-            kom.utils_3d.Neighbors.F,
-            kom.utils_3d.Neighbors.B,
-            kom.utils_3d.Neighbors.C,
-            kom.utils_3d.Neighbors.Z0,
-            kom.utils_3d.Neighbors.Z1,
-            kom.utils_3d.Neighbors.Z2,
-            kom.utils_3d.Neighbors.Z3,
-            kom.utils_3d.Neighbors.Y0,
-            kom.utils_3d.Neighbors.Y1,
-            kom.utils_3d.Neighbors.Y2,
-            kom.utils_3d.Neighbors.Y3,
-            kom.utils_3d.Neighbors.X0,
-            kom.utils_3d.Neighbors.X1,
-            kom.utils_3d.Neighbors.X2,
-            kom.utils_3d.Neighbors.X3
-        ]
-
-        self.assertTrue(np.allclose(neighbors, np.arange(len(neighbors))))
-
     def test_targets_from_highres(self):
 
         highres = self.dummy_highres()
@@ -256,7 +230,7 @@ class Utils3DTest(unittest.TestCase):
         lowres  = kom.utils_3d.lowres_from_highres(highres)
         maps    = kom.utils_3d.maps_from_highres(highres)
 
-        reconstructed_highres = kom.utils_3d.highres_from_lowres_and_maps(lowres, *maps)
+        reconstructed_highres = kom.utils_3d.highres_from_lowres_and_maps(lowres, maps)
 
         self.assertEqual(reconstructed_highres.dtype, highres.dtype)
         self.assertEqual(reconstructed_highres.ndim, highres.ndim)
@@ -267,7 +241,7 @@ class Utils3DTest(unittest.TestCase):
         predictions = kom.utils_3d.targets_from_highres(highres)
         maps        = kom.utils_3d.maps_from_predictions(predictions)
 
-        reconstructed_highres = kom.utils_3d.highres_from_lowres_and_maps(lowres, *maps)
+        reconstructed_highres = kom.utils_3d.highres_from_lowres_and_maps(lowres, maps)
 
         self.assertEqual(reconstructed_highres.dtype, highres.dtype)
         self.assertEqual(reconstructed_highres.ndim, highres.ndim)

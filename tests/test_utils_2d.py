@@ -37,18 +37,6 @@ class Utils2DTest(unittest.TestCase):
         highres = jnp.arange(np.prod(shape)).reshape(shape)
         return highres
 
-    def test_neighbor_enum(self):
-
-        neighbors = [
-            kom.utils_2d.Neighbors.L,
-            kom.utils_2d.Neighbors.R,
-            kom.utils_2d.Neighbors.U,
-            kom.utils_2d.Neighbors.D,
-            kom.utils_2d.Neighbors.C
-        ]
-
-        self.assertTrue(np.allclose(neighbors, np.arange(len(neighbors))))
-
     def test_targets_from_highres(self):
 
         highres = self.dummy_highres()
@@ -154,7 +142,7 @@ class Utils2DTest(unittest.TestCase):
         lowres  = kom.utils_2d.lowres_from_highres(highres)
         maps    = kom.utils_2d.maps_from_highres(highres)
 
-        reconstructed_highres = kom.utils_2d.highres_from_lowres_and_maps(lowres, *maps)
+        reconstructed_highres = kom.utils_2d.highres_from_lowres_and_maps(lowres, maps)
 
         self.assertEqual(reconstructed_highres.dtype, highres.dtype)
         self.assertEqual(reconstructed_highres.ndim, highres.ndim)
@@ -165,7 +153,7 @@ class Utils2DTest(unittest.TestCase):
         predictions = kom.utils_2d.targets_from_highres(highres)
         maps        = kom.utils_2d.maps_from_predictions(predictions)
 
-        reconstructed_highres = kom.utils_2d.highres_from_lowres_and_maps(lowres, *maps)
+        reconstructed_highres = kom.utils_2d.highres_from_lowres_and_maps(lowres, maps)
 
         self.assertEqual(reconstructed_highres.dtype, highres.dtype)
         self.assertEqual(reconstructed_highres.ndim, highres.ndim)

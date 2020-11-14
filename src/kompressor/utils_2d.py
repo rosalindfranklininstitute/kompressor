@@ -21,15 +21,11 @@
 # SOFTWARE.
 
 
+import jax
 import jax.numpy as jnp
 
-from enum import IntEnum
 
-# For each 2x2 4 pixel neighborhood there are 5 missing pixels to predict,
-# stored in the following consistent order
-Neighbors = IntEnum('Neighbors', ['L', 'R', 'U', 'D', 'C'], start=0)
-
-
+@jax.jit
 def targets_from_highres(highres):
     # Slice out each value of the pluses
     lmap = highres[:,  1::2, :-1:2]
@@ -44,11 +40,13 @@ def targets_from_highres(highres):
     return targets
 
 
+@jax.jit
 def lowres_from_highres(highres):
     # Downsample by skip sampling
     return highres[:, ::2, ::2]
 
 
+@jax.jit
 def maps_from_predictions(predictions):
     # Given a tensor of 5 predictions for each neighborhood, decode the [B,H,W,5,...] predictions into three maps.
     # Averages predictions when there are two for a pixel from adjacent neighborhoods.
@@ -59,24 +57,25 @@ def maps_from_predictions(predictions):
 
     # Map for containing aggregated predictions of the left and right of the pluses
     lrmap = jnp.zeros((batch_size, ph, pw + 1, *channels), dtype=dtype)
-    lrmap = lrmap.at[:, :, :-1].add(predictions[:, :, :, Neighbors.L])  # Left predictions
-    lrmap = lrmap.at[:, :,  1:].add(predictions[:, :, :, Neighbors.R])  # Right predictions
+    lrmap = lrmap.at[:, :, :-1].add(predictions[:, :, :, 0])  # Left predictions
+    lrmap = lrmap.at[:, :,  1:].add(predictions[:, :, :, 1])  # Right predictions
     # Normalize LCR map to account for left and right value double predictions
     lrmap = lrmap.at[:, :, 1:-1].mul(0.5)
 
     # Map for containing aggregated predictions of the up and down of the pluses
     udmap = jnp.zeros((batch_size, ph + 1, pw, *channels), dtype=dtype)
-    udmap = udmap.at[:, :-1, :].add(predictions[:, :, :, Neighbors.U])  # Up predictions
-    udmap = udmap.at[:, 1:,  :].add(predictions[:, :, :, Neighbors.D])  # Down predictions
+    udmap = udmap.at[:, :-1, :].add(predictions[:, :, :, 2])  # Up predictions
+    udmap = udmap.at[:, 1:,  :].add(predictions[:, :, :, 3])  # Down predictions
     # Normalize UD map to account for up and down value double predictions
     udmap = udmap.at[:, 1:-1, :].mul(0.5)
 
     # Map for containing aggregated predictions of the centre of the pluses
-    cmap = predictions[:, :, :, Neighbors.C]
+    cmap = predictions[:, :, :, 4]
 
     return lrmap, udmap, cmap
 
 
+@jax.jit
 def maps_from_highres(highres):
     # Given a highres image extract the three maps of known values from the pluses
     lrmap = highres[:, 1::2,  ::2]
@@ -86,8 +85,10 @@ def maps_from_highres(highres):
     return lrmap, udmap, cmap
 
 
-def highres_from_lowres_and_maps(lowres, lrmap, udmap, cmap):
+@jax.jit
+def highres_from_lowres_and_maps(lowres, maps):
     # Merge together a lowres image and the three maps of known values representing the missing pluses
+    lrmap, udmap, cmap = maps
 
     # Determine the size of the highres image given the size of the lowres
     dtype = lowres.dtype

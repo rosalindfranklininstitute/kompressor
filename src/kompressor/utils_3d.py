@@ -21,20 +21,11 @@
 # SOFTWARE.
 
 
+import jax
 import jax.numpy as jnp
 
-from enum import IntEnum
 
-# For each 2x2x2 8 voxel neighborhood there are 19 missing voxels to predict,
-# stored in the following consistent order
-Neighbors = IntEnum('Neighbors', [
-    'L', 'R', 'U', 'D', 'F', 'B', 'C',
-    'Z0', 'Z1', 'Z2', 'Z3',
-    'Y0', 'Y1', 'Y2', 'Y3',
-    'X0', 'X1', 'X2', 'X3'
-], start=0)
-
-
+@jax.jit
 def targets_from_highres(highres):
     # Slice out each value of the pluses
     lmap  = highres[:,  1::2,  1::2, :-1:2]
@@ -74,11 +65,13 @@ def targets_from_highres(highres):
     return targets
 
 
+@jax.jit
 def lowres_from_highres(highres):
     # Downsample by skip sampling
     return highres[:, ::2, ::2, ::2]
 
 
+@jax.jit
 def maps_from_predictions(predictions):
     # Given a tensor of predictions for each neighborhood, decode the [B,D,H,W,19,...] predictions into 7 maps
     # Averages predictions when there are two for a pixel from adjacent neighborhoods.
@@ -89,34 +82,34 @@ def maps_from_predictions(predictions):
 
     # Map for containing aggregated predictions of the left and right of the pluses
     lrmap = jnp.zeros((batch_size, pd, ph, pw + 1, *channels), dtype=dtype)
-    lrmap = lrmap.at[:, :, :, :-1].add(predictions[:, :, :, :, Neighbors.L])  # Left predictions
-    lrmap = lrmap.at[:, :, :,  1:].add(predictions[:, :, :, :, Neighbors.R])  # Right predictions
+    lrmap = lrmap.at[:, :, :, :-1].add(predictions[:, :, :, :, 0])  # Left predictions
+    lrmap = lrmap.at[:, :, :,  1:].add(predictions[:, :, :, :, 1])  # Right predictions
     # Normalize LCR map to account for left and right value double predictions
     lrmap = lrmap.at[:, :, :, 1:-1].mul(0.5)
 
     # Map for containing aggregated predictions of the up and down of the pluses
     udmap = jnp.zeros((batch_size, pd, ph + 1, pw, *channels), dtype=dtype)
-    udmap = udmap.at[:, :, :-1, :].add(predictions[:, :, :, :, Neighbors.U])  # Up predictions
-    udmap = udmap.at[:, :, 1:,  :].add(predictions[:, :, :, :, Neighbors.D])  # Down predictions
+    udmap = udmap.at[:, :, :-1, :].add(predictions[:, :, :, :, 2])  # Up predictions
+    udmap = udmap.at[:, :, 1:,  :].add(predictions[:, :, :, :, 3])  # Down predictions
     # Normalize UD map to account for up and down value double predictions
     udmap = udmap.at[:, :, 1:-1, :].mul(0.5)
 
     # Map for containing aggregated predictions of the front and back of the pluses
     fbmap = jnp.zeros((batch_size, pd + 1, ph, pw, *channels), dtype=dtype)
-    fbmap = fbmap.at[:, :-1, :, :].add(predictions[:, :, :, :, Neighbors.F])  # Front predictions
-    fbmap = fbmap.at[:, 1:,  :, :].add(predictions[:, :, :, :, Neighbors.B])  # Back predictions
+    fbmap = fbmap.at[:, :-1, :, :].add(predictions[:, :, :, :, 4])  # Front predictions
+    fbmap = fbmap.at[:, 1:,  :, :].add(predictions[:, :, :, :, 5])  # Back predictions
     # Normalize FB map to account for front and back value double predictions
     fbmap = fbmap.at[:, 1:-1, :, :].mul(0.5)
 
     # Map for containing aggregated predictions of the centre of the pluses
-    cmap = predictions[:, :, :, :, Neighbors.C]
+    cmap = predictions[:, :, :, :, 6]
 
     # Map for containing aggregated predictions of the corners of the central z-axis plane
     zmap = jnp.zeros((batch_size, pd, ph + 1, pw + 1, *channels), dtype=dtype)
-    zmap = zmap.at[:, :,  :-1,  :-1].add(predictions[:, :, :, :, Neighbors.Z0])  # Top-Left predictions
-    zmap = zmap.at[:, :,  :-1,   1:].add(predictions[:, :, :, :, Neighbors.Z1])  # Top-Right predictions
-    zmap = zmap.at[:, :,   1:,   1:].add(predictions[:, :, :, :, Neighbors.Z2])  # Bottom-Right predictions
-    zmap = zmap.at[:, :,   1:,  :-1].add(predictions[:, :, :, :, Neighbors.Z3])  # Bottom-Left predictions
+    zmap = zmap.at[:, :,  :-1,  :-1].add(predictions[:, :, :, :, 7])  # Top-Left predictions
+    zmap = zmap.at[:, :,  :-1,   1:].add(predictions[:, :, :, :, 8])  # Top-Right predictions
+    zmap = zmap.at[:, :,   1:,   1:].add(predictions[:, :, :, :, 9])  # Bottom-Right predictions
+    zmap = zmap.at[:, :,   1:,  :-1].add(predictions[:, :, :, :, 10])  # Bottom-Left predictions
     # Normalize Z map to account for front and back value double and quad predictions
     zmap = zmap.at[:, :, 1:-1, 1:-1].mul(0.25)
     zmap = zmap.at[:, :, 1:-1, ::pw].mul(0.5)
@@ -124,10 +117,10 @@ def maps_from_predictions(predictions):
 
     # Map for containing aggregated predictions of the corners of the central y-axis plane
     ymap = jnp.zeros((batch_size, pd + 1, ph, pw + 1, *channels), dtype=dtype)
-    ymap = ymap.at[:,  :-1, :,  :-1].add(predictions[:, :, :, :, Neighbors.Y0])  # Top-Left predictions
-    ymap = ymap.at[:,  :-1, :,   1:].add(predictions[:, :, :, :, Neighbors.Y1])  # Top-Right predictions
-    ymap = ymap.at[:,   1:, :,   1:].add(predictions[:, :, :, :, Neighbors.Y2])  # Bottom-Right predictions
-    ymap = ymap.at[:,   1:, :,  :-1].add(predictions[:, :, :, :, Neighbors.Y3])  # Bottom-Left predictions
+    ymap = ymap.at[:,  :-1, :,  :-1].add(predictions[:, :, :, :, 11])  # Top-Left predictions
+    ymap = ymap.at[:,  :-1, :,   1:].add(predictions[:, :, :, :, 12])  # Top-Right predictions
+    ymap = ymap.at[:,   1:, :,   1:].add(predictions[:, :, :, :, 13])  # Bottom-Right predictions
+    ymap = ymap.at[:,   1:, :,  :-1].add(predictions[:, :, :, :, 14])  # Bottom-Left predictions
     # Normalize Y map to account for front and back value double and quad predictions
     ymap = ymap.at[:, 1:-1, :, 1:-1].mul(0.25)
     ymap = ymap.at[:, 1:-1, :, ::pw].mul(0.5)
@@ -135,10 +128,10 @@ def maps_from_predictions(predictions):
 
     # Map for containing aggregated predictions of the corners of the central x-axis plane
     xmap = jnp.zeros((batch_size, pd + 1, ph + 1, pw, *channels), dtype=dtype)
-    xmap = xmap.at[:,  :-1,  :-1, :].add(predictions[:, :, :, :, Neighbors.X0])  # Top-Left predictions
-    xmap = xmap.at[:,  :-1,   1:, :].add(predictions[:, :, :, :, Neighbors.X1])  # Top-Right predictions
-    xmap = xmap.at[:,   1:,   1:, :].add(predictions[:, :, :, :, Neighbors.X2])  # Bottom-Right predictions
-    xmap = xmap.at[:,   1:,  :-1, :].add(predictions[:, :, :, :, Neighbors.X3])  # Bottom-Left predictions
+    xmap = xmap.at[:,  :-1,  :-1, :].add(predictions[:, :, :, :, 15])  # Top-Left predictions
+    xmap = xmap.at[:,  :-1,   1:, :].add(predictions[:, :, :, :, 16])  # Top-Right predictions
+    xmap = xmap.at[:,   1:,   1:, :].add(predictions[:, :, :, :, 17])  # Bottom-Right predictions
+    xmap = xmap.at[:,   1:,  :-1, :].add(predictions[:, :, :, :, 18])  # Bottom-Left predictions
     # Normalize X map to account for front and back value double and quad predictions
     xmap = xmap.at[:, 1:-1, 1:-1, :].mul(0.25)
     xmap = xmap.at[:, 1:-1, ::ph, :].mul(0.5)
@@ -147,6 +140,7 @@ def maps_from_predictions(predictions):
     return lrmap, udmap, fbmap, cmap, zmap, ymap, xmap
 
 
+@jax.jit
 def maps_from_highres(highres):
     # Given a highres image extract the four maps of known values from the pluses
     lrmap = highres[:, 1::2, 1::2,  ::2]
@@ -162,8 +156,10 @@ def maps_from_highres(highres):
     return lrmap, udmap, fbmap, cmap, zmap, ymap, xmap
 
 
-def highres_from_lowres_and_maps(lowres, lrmap, udmap, fbmap, cmap, zmap, ymap, xmap):
+@jax.jit
+def highres_from_lowres_and_maps(lowres, maps):
     # Merge together a lowres image and the four maps of known values representing the missing pluses
+    lrmap, udmap, fbmap, cmap, zmap, ymap, xmap = maps
 
     # Determine the size of the highres image given the size of the lowres
     dtype = lowres.dtype
