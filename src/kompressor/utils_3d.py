@@ -81,31 +81,34 @@ def maps_from_predictions(predictions):
     (batch_size, pd, ph, pw), channels = predictions.shape[:4], predictions.shape[5:]
 
     # Map for containing aggregated predictions of the left and right of the pluses
-    lrmap = jnp.zeros((batch_size, pd, ph, pw + 1, *channels), dtype=dtype)
+    lrmap = jnp.zeros((batch_size, pd, ph, pw + 1, *channels), dtype=jnp.float32)
     lrmap = lrmap.at[:, :, :, :-1].add(predictions[:, :, :, :, 0])  # Left predictions
     lrmap = lrmap.at[:, :, :,  1:].add(predictions[:, :, :, :, 1])  # Right predictions
     # Normalize LCR map to account for left and right value double predictions
     lrmap = lrmap.at[:, :, :, 1:-1].mul(0.5)
+    lrmap = lrmap.astype(dtype)
 
     # Map for containing aggregated predictions of the up and down of the pluses
-    udmap = jnp.zeros((batch_size, pd, ph + 1, pw, *channels), dtype=dtype)
+    udmap = jnp.zeros((batch_size, pd, ph + 1, pw, *channels), dtype=jnp.float32)
     udmap = udmap.at[:, :, :-1, :].add(predictions[:, :, :, :, 2])  # Up predictions
     udmap = udmap.at[:, :, 1:,  :].add(predictions[:, :, :, :, 3])  # Down predictions
     # Normalize UD map to account for up and down value double predictions
     udmap = udmap.at[:, :, 1:-1, :].mul(0.5)
+    udmap = udmap.astype(dtype)
 
     # Map for containing aggregated predictions of the front and back of the pluses
-    fbmap = jnp.zeros((batch_size, pd + 1, ph, pw, *channels), dtype=dtype)
+    fbmap = jnp.zeros((batch_size, pd + 1, ph, pw, *channels), dtype=jnp.float32)
     fbmap = fbmap.at[:, :-1, :, :].add(predictions[:, :, :, :, 4])  # Front predictions
     fbmap = fbmap.at[:, 1:,  :, :].add(predictions[:, :, :, :, 5])  # Back predictions
     # Normalize FB map to account for front and back value double predictions
     fbmap = fbmap.at[:, 1:-1, :, :].mul(0.5)
+    fbmap = fbmap.astype(dtype)
 
     # Map for containing aggregated predictions of the centre of the pluses
     cmap = predictions[:, :, :, :, 6]
 
     # Map for containing aggregated predictions of the corners of the central z-axis plane
-    zmap = jnp.zeros((batch_size, pd, ph + 1, pw + 1, *channels), dtype=dtype)
+    zmap = jnp.zeros((batch_size, pd, ph + 1, pw + 1, *channels), dtype=jnp.float32)
     zmap = zmap.at[:, :,  :-1,  :-1].add(predictions[:, :, :, :, 7])  # Top-Left predictions
     zmap = zmap.at[:, :,  :-1,   1:].add(predictions[:, :, :, :, 8])  # Top-Right predictions
     zmap = zmap.at[:, :,   1:,   1:].add(predictions[:, :, :, :, 9])  # Bottom-Right predictions
@@ -114,9 +117,10 @@ def maps_from_predictions(predictions):
     zmap = zmap.at[:, :, 1:-1, 1:-1].mul(0.25)
     zmap = zmap.at[:, :, 1:-1, ::pw].mul(0.5)
     zmap = zmap.at[:, :, ::ph, 1:-1].mul(0.5)
+    zmap = zmap.astype(dtype)
 
     # Map for containing aggregated predictions of the corners of the central y-axis plane
-    ymap = jnp.zeros((batch_size, pd + 1, ph, pw + 1, *channels), dtype=dtype)
+    ymap = jnp.zeros((batch_size, pd + 1, ph, pw + 1, *channels), dtype=jnp.float32)
     ymap = ymap.at[:,  :-1, :,  :-1].add(predictions[:, :, :, :, 11])  # Top-Left predictions
     ymap = ymap.at[:,  :-1, :,   1:].add(predictions[:, :, :, :, 12])  # Top-Right predictions
     ymap = ymap.at[:,   1:, :,   1:].add(predictions[:, :, :, :, 13])  # Bottom-Right predictions
@@ -125,9 +129,10 @@ def maps_from_predictions(predictions):
     ymap = ymap.at[:, 1:-1, :, 1:-1].mul(0.25)
     ymap = ymap.at[:, 1:-1, :, ::pw].mul(0.5)
     ymap = ymap.at[:, ::pd, :, 1:-1].mul(0.5)
+    ymap = ymap.astype(dtype)
 
     # Map for containing aggregated predictions of the corners of the central x-axis plane
-    xmap = jnp.zeros((batch_size, pd + 1, ph + 1, pw, *channels), dtype=dtype)
+    xmap = jnp.zeros((batch_size, pd + 1, ph + 1, pw, *channels), dtype=jnp.float32)
     xmap = xmap.at[:,  :-1,  :-1, :].add(predictions[:, :, :, :, 15])  # Top-Left predictions
     xmap = xmap.at[:,  :-1,   1:, :].add(predictions[:, :, :, :, 16])  # Top-Right predictions
     xmap = xmap.at[:,   1:,   1:, :].add(predictions[:, :, :, :, 17])  # Bottom-Right predictions
@@ -136,6 +141,7 @@ def maps_from_predictions(predictions):
     xmap = xmap.at[:, 1:-1, 1:-1, :].mul(0.25)
     xmap = xmap.at[:, 1:-1, ::ph, :].mul(0.5)
     xmap = xmap.at[:, ::pd, 1:-1, :].mul(0.5)
+    xmap = xmap.astype(dtype)
 
     return lrmap, udmap, fbmap, cmap, zmap, ymap, xmap
 
@@ -158,7 +164,7 @@ def maps_from_highres(highres):
 
 @jax.jit
 def highres_from_lowres_and_maps(lowres, maps):
-    # Merge together a lowres image and the four maps of known values representing the missing pluses
+    # Merge together a lowres image and the seven maps of known values representing the missing voxels
     lrmap, udmap, fbmap, cmap, zmap, ymap, xmap = maps
 
     # Determine the size of the highres image given the size of the lowres
@@ -176,5 +182,36 @@ def highres_from_lowres_and_maps(lowres, maps):
     highres = highres.at[:, 1::2,  ::2,  ::2].set(zmap)    # Apply the values from the central z-axis plane corners
     highres = highres.at[:,  ::2, 1::2,  ::2].set(ymap)    # Apply the values from the central y-axis plane corners
     highres = highres.at[:,  ::2,  ::2, 1::2].set(xmap)    # Apply the values from the central x-axis plane corners
+
+    return highres
+
+
+def encode(predictions_fn, encode_fn, highres):
+
+    # Extract the lowres image from the highres image
+    lowres = lowres_from_highres(highres)
+
+    # Extract the plus values from the highres image
+    gt_maps = maps_from_highres(highres)
+
+    # Extract the predicted values from the lowres image
+    pred_maps = predictions_fn(lowres)
+
+    # Compare the predictions to the true values for the pluses
+    encoded_maps = [encode_fn(*maps) for maps in zip(pred_maps, gt_maps)]
+
+    return lowres, encoded_maps
+
+
+def decode(predictions_fn, decode_fn, lowres, encoded_maps):
+
+    # Extract the predicted values from the lowres image
+    pred_maps = predictions_fn(lowres)
+
+    # Correct the predictions using the provided encoded maps
+    gt_maps = [decode_fn(*maps) for maps in zip(pred_maps, encoded_maps)]
+
+    # Reconstruct highres image from the corrected true values
+    highres = highres_from_lowres_and_maps(lowres, gt_maps)
 
     return highres

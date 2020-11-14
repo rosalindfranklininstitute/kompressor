@@ -56,18 +56,20 @@ def maps_from_predictions(predictions):
     (batch_size, ph, pw), channels = predictions.shape[:3], predictions.shape[4:]
 
     # Map for containing aggregated predictions of the left and right of the pluses
-    lrmap = jnp.zeros((batch_size, ph, pw + 1, *channels), dtype=dtype)
+    lrmap = jnp.zeros((batch_size, ph, pw + 1, *channels), dtype=jnp.float32)
     lrmap = lrmap.at[:, :, :-1].add(predictions[:, :, :, 0])  # Left predictions
     lrmap = lrmap.at[:, :,  1:].add(predictions[:, :, :, 1])  # Right predictions
     # Normalize LCR map to account for left and right value double predictions
     lrmap = lrmap.at[:, :, 1:-1].mul(0.5)
+    lrmap = lrmap.astype(dtype)
 
     # Map for containing aggregated predictions of the up and down of the pluses
-    udmap = jnp.zeros((batch_size, ph + 1, pw, *channels), dtype=dtype)
+    udmap = jnp.zeros((batch_size, ph + 1, pw, *channels), dtype=jnp.float32)
     udmap = udmap.at[:, :-1, :].add(predictions[:, :, :, 2])  # Up predictions
     udmap = udmap.at[:, 1:,  :].add(predictions[:, :, :, 3])  # Down predictions
     # Normalize UD map to account for up and down value double predictions
     udmap = udmap.at[:, 1:-1, :].mul(0.5)
+    udmap = udmap.astype(dtype)
 
     # Map for containing aggregated predictions of the centre of the pluses
     cmap = predictions[:, :, :, 4]
@@ -101,5 +103,36 @@ def highres_from_lowres_and_maps(lowres, maps):
     highres = highres.at[:, 1::2,  ::2].set(lrmap)   # Apply the values from the left and right of the pluses
     highres = highres.at[:,  ::2, 1::2].set(udmap)   # Apply the values from the up and down of the pluses
     highres = highres.at[:, 1::2, 1::2].set(cmap)    # Apply the values from the centre of the pluses
+
+    return highres
+
+
+def encode(predictions_fn, encode_fn, highres):
+
+    # Extract the lowres image from the highres image
+    lowres = lowres_from_highres(highres)
+
+    # Extract the plus values from the highres image
+    gt_maps = maps_from_highres(highres)
+
+    # Extract the predicted values from the lowres image
+    pred_maps = predictions_fn(lowres)
+
+    # Compare the predictions to the true values for the pluses
+    encoded_maps = [encode_fn(*maps) for maps in zip(pred_maps, gt_maps)]
+
+    return lowres, encoded_maps
+
+
+def decode(predictions_fn, decode_fn, lowres, encoded_maps):
+
+    # Extract the predicted values from the lowres image
+    pred_maps = predictions_fn(lowres)
+
+    # Correct the predictions using the provided encoded maps
+    gt_maps = [decode_fn(*maps) for maps in zip(pred_maps, encoded_maps)]
+
+    # Reconstruct highres image from the corrected true values
+    highres = highres_from_lowres_and_maps(lowres, gt_maps)
 
     return highres

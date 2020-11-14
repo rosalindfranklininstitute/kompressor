@@ -34,7 +34,7 @@ class Utils2DTest(unittest.TestCase):
 
     def dummy_highres(self):
         shape = (2, 5, 5, 3)
-        highres = jnp.arange(np.prod(shape)).reshape(shape)
+        highres = (jnp.arange(np.prod(shape)).reshape(shape) % 256).astype(jnp.uint8)
         return highres
 
     def test_targets_from_highres(self):
@@ -154,6 +154,28 @@ class Utils2DTest(unittest.TestCase):
         maps        = kom.utils_2d.maps_from_predictions(predictions)
 
         reconstructed_highres = kom.utils_2d.highres_from_lowres_and_maps(lowres, maps)
+
+        self.assertEqual(reconstructed_highres.dtype, highres.dtype)
+        self.assertEqual(reconstructed_highres.ndim, highres.ndim)
+        self.assertTrue(np.allclose(reconstructed_highres, highres))
+
+    def test_encode_decode(self):
+
+        highres = self.dummy_highres()
+
+        # Dummy predictor function just predicts all ones
+        def predictions_fn(lowres):
+            predictions = jnp.ones((lowres.shape[0],
+                                    lowres.shape[1] - 1,
+                                    lowres.shape[2] - 1,
+                                    5, *lowres.shape[3:]), dtype=lowres.dtype)
+            return kom.utils_2d.maps_from_predictions(predictions)
+
+        encode_fn = kom.utils.encode_values_uint8
+        decode_fn = kom.utils.decode_values_uint8
+
+        lowres, maps          = kom.utils_2d.encode(predictions_fn, encode_fn, highres)
+        reconstructed_highres = kom.utils_2d.decode(predictions_fn, decode_fn, lowres, maps)
 
         self.assertEqual(reconstructed_highres.dtype, highres.dtype)
         self.assertEqual(reconstructed_highres.ndim, highres.ndim)
