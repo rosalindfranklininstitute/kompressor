@@ -31,7 +31,7 @@ import jax.numpy as jnp
 import kompressor as kom
 
 
-class Utils2DTest(unittest.TestCase):
+class ImageTest(unittest.TestCase):
 
     def dummy_highres(self):
         shape = (2, 5, 5, 3)
@@ -42,7 +42,7 @@ class Utils2DTest(unittest.TestCase):
 
         highres = self.dummy_highres()
 
-        targets = kom.utils_2d.targets_from_highres(highres)
+        targets = kom.image.targets_from_highres(highres)
 
         self.assertEqual(targets.dtype, highres.dtype)
         self.assertEqual(targets.ndim, highres.ndim + 1)
@@ -58,7 +58,7 @@ class Utils2DTest(unittest.TestCase):
 
         highres = self.dummy_highres()
 
-        lowres = kom.utils_2d.lowres_from_highres(highres)
+        lowres = kom.image.lowres_from_highres(highres)
 
         self.assertEqual(lowres.dtype, highres.dtype)
         self.assertEqual(lowres.ndim, highres.ndim)
@@ -73,9 +73,9 @@ class Utils2DTest(unittest.TestCase):
 
         highres = self.dummy_highres()
 
-        predictions = kom.utils_2d.targets_from_highres(highres)
+        predictions = kom.image.targets_from_highres(highres)
 
-        lrmap, udmap, cmap = kom.utils_2d.maps_from_predictions(predictions)
+        lrmap, udmap, cmap = kom.image.maps_from_predictions(predictions)
 
         self.assertEqual(lrmap.dtype, predictions.dtype)
         self.assertEqual(lrmap.ndim, highres.ndim)
@@ -108,7 +108,7 @@ class Utils2DTest(unittest.TestCase):
 
         highres = self.dummy_highres()
 
-        lrmap, udmap, cmap = kom.utils_2d.maps_from_highres(highres)
+        lrmap, udmap, cmap = kom.image.maps_from_highres(highres)
 
         self.assertEqual(lrmap.dtype, highres.dtype)
         self.assertEqual(lrmap.ndim, highres.ndim)
@@ -140,21 +140,21 @@ class Utils2DTest(unittest.TestCase):
     def test_highres_from_lowres_and_maps(self):
 
         highres = self.dummy_highres()
-        lowres  = kom.utils_2d.lowres_from_highres(highres)
-        maps    = kom.utils_2d.maps_from_highres(highres)
+        lowres  = kom.image.lowres_from_highres(highres)
+        maps    = kom.image.maps_from_highres(highres)
 
-        reconstructed_highres = kom.utils_2d.highres_from_lowres_and_maps(lowres, maps)
+        reconstructed_highres = kom.image.highres_from_lowres_and_maps(lowres, maps)
 
         self.assertEqual(reconstructed_highres.dtype, highres.dtype)
         self.assertEqual(reconstructed_highres.ndim, highres.ndim)
         self.assertTrue(np.allclose(reconstructed_highres, highres))
 
         highres     = self.dummy_highres()
-        lowres      = kom.utils_2d.lowres_from_highres(highres)
-        predictions = kom.utils_2d.targets_from_highres(highres)
-        maps        = kom.utils_2d.maps_from_predictions(predictions)
+        lowres      = kom.image.lowres_from_highres(highres)
+        predictions = kom.image.targets_from_highres(highres)
+        maps        = kom.image.maps_from_predictions(predictions)
 
-        reconstructed_highres = kom.utils_2d.highres_from_lowres_and_maps(lowres, maps)
+        reconstructed_highres = kom.image.highres_from_lowres_and_maps(lowres, maps)
 
         self.assertEqual(reconstructed_highres.dtype, highres.dtype)
         self.assertEqual(reconstructed_highres.ndim, highres.ndim)
@@ -170,13 +170,13 @@ class Utils2DTest(unittest.TestCase):
                                     lowres.shape[1] - 1,
                                     lowres.shape[2] - 1,
                                     5, *lowres.shape[3:]), dtype=lowres.dtype)
-            return kom.utils_2d.maps_from_predictions(predictions)
+            return kom.image.maps_from_predictions(predictions)
 
         encode_fn = kom.utils.encode_values_uint8
         decode_fn = kom.utils.decode_values_uint8
 
-        lowres, maps          = kom.utils_2d.encode(predictions_fn, encode_fn, highres)
-        reconstructed_highres = kom.utils_2d.decode(predictions_fn, decode_fn, lowres, maps)
+        lowres, maps          = kom.image.encode(predictions_fn, encode_fn, highres)
+        reconstructed_highres = kom.image.decode(predictions_fn, decode_fn, lowres, maps)
 
         lrmap, udmap, cmap = maps
 
@@ -226,13 +226,13 @@ class Utils2DTest(unittest.TestCase):
             key = jax.random.PRNGKey(1234)
             predictions = jax.nn.softmax(jax.random.uniform(key, shape, dtype=jnp.float32), axis=-1)
 
-            return kom.utils_2d.maps_from_predictions(predictions)
+            return kom.image.maps_from_predictions(predictions)
 
         encode_fn = kom.utils.encode_categorical
         decode_fn = kom.utils.decode_categorical
 
-        lowres, maps          = kom.utils_2d.encode(predictions_fn, encode_fn, highres)
-        reconstructed_highres = kom.utils_2d.decode(predictions_fn, decode_fn, lowres, maps)
+        lowres, maps          = kom.image.encode(predictions_fn, encode_fn, highres)
+        reconstructed_highres = kom.image.decode(predictions_fn, decode_fn, lowres, maps)
 
         lrmap, udmap, cmap = maps
 

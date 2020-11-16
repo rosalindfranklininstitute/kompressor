@@ -22,6 +22,6 @@
 
 
 from kompressor import utils
-from kompressor import utils_2d, utils_3d
+from kompressor import image, volume
 
 VERSION = 'v1.0a'

@@ -31,7 +31,7 @@ import jax.numpy as jnp
 import kompressor as kom
 
 
-class Utils3DTest(unittest.TestCase):
+class VolumeTest(unittest.TestCase):
 
     def dummy_highres(self):
         shape = (1, 5, 5, 5, 1)
@@ -42,7 +42,7 @@ class Utils3DTest(unittest.TestCase):
 
         highres = self.dummy_highres()
 
-        targets = kom.utils_3d.targets_from_highres(highres)
+        targets = kom.volume.targets_from_highres(highres)
 
         self.assertEqual(targets.dtype, highres.dtype)
         self.assertEqual(targets.ndim, highres.ndim + 1)
@@ -59,7 +59,7 @@ class Utils3DTest(unittest.TestCase):
 
         highres = self.dummy_highres()
 
-        lowres = kom.utils_3d.lowres_from_highres(highres)
+        lowres = kom.volume.lowres_from_highres(highres)
 
         self.assertEqual(lowres.dtype, highres.dtype)
         self.assertEqual(lowres.ndim, highres.ndim)
@@ -75,9 +75,9 @@ class Utils3DTest(unittest.TestCase):
 
         highres = self.dummy_highres()
 
-        predictions = kom.utils_3d.targets_from_highres(highres)
+        predictions = kom.volume.targets_from_highres(highres)
 
-        lrmap, udmap, fbmap, cmap, zmap, ymap, xmap = kom.utils_3d.maps_from_predictions(predictions)
+        lrmap, udmap, fbmap, cmap, zmap, ymap, xmap = kom.volume.maps_from_predictions(predictions)
 
         self.assertEqual(lrmap.dtype, predictions.dtype)
         self.assertEqual(lrmap.ndim, highres.ndim)
@@ -153,7 +153,7 @@ class Utils3DTest(unittest.TestCase):
 
         highres = self.dummy_highres()
 
-        lrmap, udmap, fbmap, cmap, zmap, ymap, xmap = kom.utils_3d.maps_from_highres(highres)
+        lrmap, udmap, fbmap, cmap, zmap, ymap, xmap = kom.volume.maps_from_highres(highres)
 
         self.assertEqual(lrmap.dtype, highres.dtype)
         self.assertEqual(lrmap.ndim, highres.ndim)
@@ -228,21 +228,21 @@ class Utils3DTest(unittest.TestCase):
     def test_highres_from_lowres_and_maps(self):
 
         highres = self.dummy_highres()
-        lowres  = kom.utils_3d.lowres_from_highres(highres)
-        maps    = kom.utils_3d.maps_from_highres(highres)
+        lowres  = kom.volume.lowres_from_highres(highres)
+        maps    = kom.volume.maps_from_highres(highres)
 
-        reconstructed_highres = kom.utils_3d.highres_from_lowres_and_maps(lowres, maps)
+        reconstructed_highres = kom.volume.highres_from_lowres_and_maps(lowres, maps)
 
         self.assertEqual(reconstructed_highres.dtype, highres.dtype)
         self.assertEqual(reconstructed_highres.ndim, highres.ndim)
         self.assertTrue(np.allclose(reconstructed_highres, highres))
 
         highres     = self.dummy_highres()
-        lowres      = kom.utils_3d.lowres_from_highres(highres)
-        predictions = kom.utils_3d.targets_from_highres(highres)
-        maps        = kom.utils_3d.maps_from_predictions(predictions)
+        lowres      = kom.volume.lowres_from_highres(highres)
+        predictions = kom.volume.targets_from_highres(highres)
+        maps        = kom.volume.maps_from_predictions(predictions)
 
-        reconstructed_highres = kom.utils_3d.highres_from_lowres_and_maps(lowres, maps)
+        reconstructed_highres = kom.volume.highres_from_lowres_and_maps(lowres, maps)
 
         self.assertEqual(reconstructed_highres.dtype, highres.dtype)
         self.assertEqual(reconstructed_highres.ndim, highres.ndim)
@@ -259,13 +259,13 @@ class Utils3DTest(unittest.TestCase):
                                     lowres.shape[2] - 1,
                                     lowres.shape[3] - 1,
                                     19, *lowres.shape[4:]), dtype=lowres.dtype)
-            return kom.utils_3d.maps_from_predictions(predictions)
+            return kom.volume.maps_from_predictions(predictions)
 
         encode_fn = kom.utils.encode_values_uint16
         decode_fn = kom.utils.decode_values_uint16
 
-        lowres, maps          = kom.utils_3d.encode(predictions_fn, encode_fn, highres)
-        reconstructed_highres = kom.utils_3d.decode(predictions_fn, decode_fn, lowres, maps)
+        lowres, maps          = kom.volume.encode(predictions_fn, encode_fn, highres)
+        reconstructed_highres = kom.volume.decode(predictions_fn, decode_fn, lowres, maps)
 
         lrmap, udmap, fbmap, cmap, zmap, ymap, xmap = maps
 
@@ -359,13 +359,13 @@ class Utils3DTest(unittest.TestCase):
             key = jax.random.PRNGKey(1234)
             predictions = jax.nn.softmax(jax.random.uniform(key, shape, dtype=jnp.float32), axis=-1)
 
-            return kom.utils_3d.maps_from_predictions(predictions)
+            return kom.volume.maps_from_predictions(predictions)
 
         encode_fn = kom.utils.encode_categorical
         decode_fn = kom.utils.decode_categorical
 
-        lowres, maps          = kom.utils_3d.encode(predictions_fn, encode_fn, highres)
-        reconstructed_highres = kom.utils_3d.decode(predictions_fn, decode_fn, lowres, maps)
+        lowres, maps          = kom.volume.encode(predictions_fn, encode_fn, highres)
+        reconstructed_highres = kom.volume.decode(predictions_fn, decode_fn, lowres, maps)
 
         lrmap, udmap, fbmap, cmap, zmap, ymap, xmap = maps
 
