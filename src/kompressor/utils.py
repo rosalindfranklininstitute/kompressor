@@ -44,3 +44,58 @@ def encode_values_uint16(pred, gt):
 def decode_values_uint16(pred, encoded):
     return jnp.uint16(((jnp.int32(pred) + jnp.int32(encoded)) + 65536) % 65536)
 
+
+@jax.jit
+def encode_categorical(pred, gt):
+
+    # Output shape and dtype determined from reference values
+    shape = gt.shape
+    dtype = gt.dtype
+
+    # Determine the descending order indexing for the logits at each spatial location and channel
+    logit_ranks = jnp.argsort(pred).astype(dtype)[..., ::-1]
+
+    # Flatten logit ranks from [B, ...SPATIAL..., C, L] to [-1, L]
+    flat_logit_ranks = jnp.reshape(logit_ranks, (-1, logit_ranks.shape[-1]))
+    # Flatten gt from [B, ...SPATIAL..., C] to [-1,]
+    flat_gt = jnp.reshape(gt, (-1, 1))
+
+    # Perform argwhere for a single location and channel
+    def argwhere(logit_ranks, gt):
+        return jnp.argmax(logit_ranks == gt)
+
+    # Distribute the argwhere over all spatial locations and channels
+    flat_encoded = jax.vmap(argwhere)(flat_logit_ranks, flat_gt)
+
+    # Reshape the encoded values back into the shape of the gt tensor
+    encoded = jnp.reshape(flat_encoded, shape)
+
+    return encoded
+
+
+@jax.jit
+def decode_categorical(pred, encoded):
+
+    # Output shape and dtype determined from encoded values
+    shape = encoded.shape
+    dtype = encoded.dtype
+
+    # Determine the descending order indexing for the logits at each spatial location and channel
+    logit_ranks = jnp.argsort(pred).astype(dtype)[..., ::-1]
+
+    # Flatten logit ranks from [B, ...SPATIAL..., C, L] to [-1, L]
+    flat_logit_ranks = jnp.reshape(logit_ranks, (-1, logit_ranks.shape[-1]))
+    # Flatten encoded from [B, ...SPATIAL..., C] to [-1,]
+    flat_encoded = jnp.reshape(encoded, (-1,))
+
+    # Perform indexing for a single location and channel
+    def index(logit_ranks, encoded):
+        return logit_ranks[encoded]
+
+    # Distribute the indexing over all spatial locations and channels
+    flat_decoded = jax.vmap(index)(flat_logit_ranks, flat_encoded)
+
+    # Reshape the decoded values back into the shape of the encoded tensor
+    decoded = jnp.reshape(flat_decoded, shape)
+
+    return decoded

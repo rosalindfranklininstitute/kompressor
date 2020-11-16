@@ -26,6 +26,7 @@ import unittest
 
 # Test imports
 import numpy as np
+import jax
 import jax.numpy as jnp
 import kompressor as kom
 
@@ -33,7 +34,7 @@ import kompressor as kom
 class Utils3DTest(unittest.TestCase):
 
     def dummy_highres(self):
-        shape = (2, 5, 5, 5, 3)
+        shape = (1, 5, 5, 5, 1)
         highres = (jnp.arange(np.prod(shape)).reshape(shape) % 65536).astype(jnp.uint16)
         return highres
 
@@ -262,6 +263,34 @@ class Utils3DTest(unittest.TestCase):
 
         encode_fn = kom.utils.encode_values_uint16
         decode_fn = kom.utils.decode_values_uint16
+
+        lowres, maps          = kom.utils_3d.encode(predictions_fn, encode_fn, highres)
+        reconstructed_highres = kom.utils_3d.decode(predictions_fn, decode_fn, lowres, maps)
+
+        self.assertEqual(reconstructed_highres.dtype, highres.dtype)
+        self.assertEqual(reconstructed_highres.ndim, highres.ndim)
+        self.assertTrue(np.allclose(reconstructed_highres, highres))
+
+    def test_encode_decode_categorical(self):
+
+        highres = (self.dummy_highres() % 256).astype(jnp.uint8)
+
+        # Dummy predictor function predicts same random logits every time
+        def predictions_fn(lowres):
+
+            shape = (lowres.shape[0],
+                     lowres.shape[1] - 1,
+                     lowres.shape[2] - 1,
+                     lowres.shape[3] - 1,
+                     19, *lowres.shape[4:], 256)
+
+            key = jax.random.PRNGKey(1234)
+            predictions = jax.nn.softmax(jax.random.uniform(key, shape, dtype=jnp.float32), axis=-1)
+
+            return kom.utils_3d.maps_from_predictions(predictions)
+
+        encode_fn = kom.utils.encode_categorical
+        decode_fn = kom.utils.decode_categorical
 
         lowres, maps          = kom.utils_3d.encode(predictions_fn, encode_fn, highres)
         reconstructed_highres = kom.utils_3d.decode(predictions_fn, decode_fn, lowres, maps)

@@ -26,6 +26,7 @@ import unittest
 
 # Test imports
 import numpy as np
+import jax
 import jax.numpy as jnp
 import kompressor as kom
 
@@ -181,3 +182,29 @@ class Utils2DTest(unittest.TestCase):
         self.assertEqual(reconstructed_highres.ndim, highres.ndim)
         self.assertTrue(np.allclose(reconstructed_highres, highres))
 
+    def test_encode_decode_categorical(self):
+
+        highres = (self.dummy_highres() % 256).astype(jnp.uint8)
+
+        # Dummy predictor function predicts same random logits every time
+        def predictions_fn(lowres):
+
+            shape = (lowres.shape[0],
+                     lowres.shape[1] - 1,
+                     lowres.shape[2] - 1,
+                     5, *lowres.shape[3:], 256)
+
+            key = jax.random.PRNGKey(1234)
+            predictions = jax.nn.softmax(jax.random.uniform(key, shape, dtype=jnp.float32), axis=-1)
+
+            return kom.utils_2d.maps_from_predictions(predictions)
+
+        encode_fn = kom.utils.encode_categorical
+        decode_fn = kom.utils.decode_categorical
+
+        lowres, maps          = kom.utils_2d.encode(predictions_fn, encode_fn, highres)
+        reconstructed_highres = kom.utils_2d.decode(predictions_fn, decode_fn, lowres, maps)
+
+        self.assertEqual(reconstructed_highres.dtype, highres.dtype)
+        self.assertEqual(reconstructed_highres.ndim, highres.ndim)
+        self.assertTrue(np.allclose(reconstructed_highres, highres))
