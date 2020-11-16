@@ -267,6 +267,78 @@ class Utils3DTest(unittest.TestCase):
         lowres, maps          = kom.utils_3d.encode(predictions_fn, encode_fn, highres)
         reconstructed_highres = kom.utils_3d.decode(predictions_fn, decode_fn, lowres, maps)
 
+        lrmap, udmap, fbmap, cmap, zmap, ymap, xmap = maps
+
+        self.assertEqual(lrmap.dtype, highres.dtype)
+        self.assertEqual(lrmap.ndim, highres.ndim)
+        self.assertTrue(np.allclose(lrmap.shape, [
+            highres.shape[0],
+            (highres.shape[1] - 1) // 2,
+            (highres.shape[2] - 1) // 2,
+            ((highres.shape[3] - 1) // 2) + 1,
+            *highres.shape[4:]
+        ]))
+
+        self.assertEqual(udmap.dtype, highres.dtype)
+        self.assertEqual(udmap.ndim, highres.ndim)
+        self.assertTrue(np.allclose(udmap.shape, [
+            highres.shape[0],
+            (highres.shape[1] - 1) // 2,
+            ((highres.shape[2] - 1) // 2) + 1,
+            (highres.shape[3] - 1) // 2,
+            *highres.shape[4:]
+        ]))
+
+        self.assertEqual(fbmap.dtype, highres.dtype)
+        self.assertEqual(fbmap.ndim, highres.ndim)
+        self.assertTrue(np.allclose(fbmap.shape, [
+            highres.shape[0],
+            ((highres.shape[1] - 1) // 2) + 1,
+            (highres.shape[2] - 1) // 2,
+            (highres.shape[3] - 1) // 2,
+            *highres.shape[4:]
+        ]))
+
+        self.assertEqual(cmap.dtype, highres.dtype)
+        self.assertEqual(cmap.ndim, highres.ndim)
+        self.assertTrue(np.allclose(cmap.shape, [
+            highres.shape[0],
+            (highres.shape[1] - 1) // 2,
+            (highres.shape[2] - 1) // 2,
+            (highres.shape[3] - 1) // 2,
+            *highres.shape[4:]
+        ]))
+
+        self.assertEqual(zmap.dtype, highres.dtype)
+        self.assertEqual(zmap.ndim, highres.ndim)
+        self.assertTrue(np.allclose(zmap.shape, [
+            highres.shape[0],
+            (highres.shape[1] - 1) // 2,
+            ((highres.shape[2] - 1) // 2) + 1,
+            ((highres.shape[3] - 1) // 2) + 1,
+            *highres.shape[4:]
+        ]))
+
+        self.assertEqual(ymap.dtype, highres.dtype)
+        self.assertEqual(ymap.ndim, highres.ndim)
+        self.assertTrue(np.allclose(ymap.shape, [
+            highres.shape[0],
+            ((highres.shape[1] - 1) // 2) + 1,
+            (highres.shape[2] - 1) // 2,
+            ((highres.shape[3] - 1) // 2) + 1,
+            *highres.shape[4:]
+        ]))
+
+        self.assertEqual(xmap.dtype, highres.dtype)
+        self.assertEqual(xmap.ndim, highres.ndim)
+        self.assertTrue(np.allclose(xmap.shape, [
+            highres.shape[0],
+            ((highres.shape[1] - 1) // 2) + 1,
+            ((highres.shape[2] - 1) // 2) + 1,
+            (highres.shape[3] - 1) // 2,
+            *highres.shape[4:]
+        ]))
+
         self.assertEqual(reconstructed_highres.dtype, highres.dtype)
         self.assertEqual(reconstructed_highres.ndim, highres.ndim)
         self.assertTrue(np.allclose(reconstructed_highres, highres))
@@ -294,6 +366,78 @@ class Utils3DTest(unittest.TestCase):
 
         lowres, maps          = kom.utils_3d.encode(predictions_fn, encode_fn, highres)
         reconstructed_highres = kom.utils_3d.decode(predictions_fn, decode_fn, lowres, maps)
+
+        lrmap, udmap, fbmap, cmap, zmap, ymap, xmap = maps
+
+        self.assertEqual(lrmap.dtype, highres.dtype)
+        self.assertEqual(lrmap.ndim, highres.ndim)
+        self.assertTrue(np.allclose(lrmap.shape, [
+            highres.shape[0],
+            (highres.shape[1] - 1) // 2,
+            (highres.shape[2] - 1) // 2,
+            ((highres.shape[3] - 1) // 2) + 1,
+            *highres.shape[4:]
+        ]))
+
+        self.assertEqual(udmap.dtype, highres.dtype)
+        self.assertEqual(udmap.ndim, highres.ndim)
+        self.assertTrue(np.allclose(udmap.shape, [
+            highres.shape[0],
+            (highres.shape[1] - 1) // 2,
+            ((highres.shape[2] - 1) // 2) + 1,
+            (highres.shape[3] - 1) // 2,
+            *highres.shape[4:]
+        ]))
+
+        self.assertEqual(fbmap.dtype, highres.dtype)
+        self.assertEqual(fbmap.ndim, highres.ndim)
+        self.assertTrue(np.allclose(fbmap.shape, [
+            highres.shape[0],
+            ((highres.shape[1] - 1) // 2) + 1,
+            (highres.shape[2] - 1) // 2,
+            (highres.shape[3] - 1) // 2,
+            *highres.shape[4:]
+        ]))
+
+        self.assertEqual(cmap.dtype, highres.dtype)
+        self.assertEqual(cmap.ndim, highres.ndim)
+        self.assertTrue(np.allclose(cmap.shape, [
+            highres.shape[0],
+            (highres.shape[1] - 1) // 2,
+            (highres.shape[2] - 1) // 2,
+            (highres.shape[3] - 1) // 2,
+            *highres.shape[4:]
+        ]))
+
+        self.assertEqual(zmap.dtype, highres.dtype)
+        self.assertEqual(zmap.ndim, highres.ndim)
+        self.assertTrue(np.allclose(zmap.shape, [
+            highres.shape[0],
+            (highres.shape[1] - 1) // 2,
+            ((highres.shape[2] - 1) // 2) + 1,
+            ((highres.shape[3] - 1) // 2) + 1,
+            *highres.shape[4:]
+        ]))
+
+        self.assertEqual(ymap.dtype, highres.dtype)
+        self.assertEqual(ymap.ndim, highres.ndim)
+        self.assertTrue(np.allclose(ymap.shape, [
+            highres.shape[0],
+            ((highres.shape[1] - 1) // 2) + 1,
+            (highres.shape[2] - 1) // 2,
+            ((highres.shape[3] - 1) // 2) + 1,
+            *highres.shape[4:]
+        ]))
+
+        self.assertEqual(xmap.dtype, highres.dtype)
+        self.assertEqual(xmap.ndim, highres.ndim)
+        self.assertTrue(np.allclose(xmap.shape, [
+            highres.shape[0],
+            ((highres.shape[1] - 1) // 2) + 1,
+            ((highres.shape[2] - 1) // 2) + 1,
+            (highres.shape[3] - 1) // 2,
+            *highres.shape[4:]
+        ]))
 
         self.assertEqual(reconstructed_highres.dtype, highres.dtype)
         self.assertEqual(reconstructed_highres.ndim, highres.ndim)
