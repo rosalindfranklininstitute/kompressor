@@ -23,7 +23,7 @@
 
 FROM ubuntu:focal
 
-# Install packages and register python3 as python (required for radia install which calls "python" blindly)
+# Install packages and register python3 as python
 RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections && \
     apt-get update -y && apt-get install -y dialog apt-utils && \
     apt-get install -y build-essential git wget python3 python3-pip && \
