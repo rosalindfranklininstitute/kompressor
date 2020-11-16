@@ -62,7 +62,7 @@ def encode_categorical(pred, gt):
 
     # Perform argwhere for a single location and channel
     def argwhere(logit_ranks, gt):
-        return jnp.argmax(logit_ranks == gt)
+        return jnp.argmax(logit_ranks == gt).astype(dtype)
 
     # Distribute the argwhere over all spatial locations and channels
     flat_encoded = jax.vmap(argwhere)(flat_logit_ranks, flat_gt)
