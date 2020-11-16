@@ -21,20 +21,26 @@
 # SOFTWARE.
 
 
+import jax
 import jax.numpy as jnp
 
 
+@jax.jit
 def encode_values_uint8(pred, gt):
     return jnp.uint8(((jnp.int32(gt) - jnp.int32(pred)) + 256) % 256)
 
 
-def decode_values_uint8(pred, delta):
-    return jnp.uint8(((jnp.int32(pred) + jnp.int32(delta)) + 256) % 256)
+@jax.jit
+def decode_values_uint8(pred, encoded):
+    return jnp.uint8(((jnp.int32(pred) + jnp.int32(encoded)) + 256) % 256)
 
 
+@jax.jit
 def encode_values_uint16(pred, gt):
     return jnp.uint16(((jnp.int32(gt) - jnp.int32(pred)) + 65536) % 65536)
 
 
-def decode_values_uint16(pred, delta):
-    return jnp.uint16(((jnp.int32(pred) + jnp.int32(delta)) + 65536) % 65536)
+@jax.jit
+def decode_values_uint16(pred, encoded):
+    return jnp.uint16(((jnp.int32(pred) + jnp.int32(encoded)) + 65536) % 65536)
+
