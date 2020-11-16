@@ -58,7 +58,7 @@ def encode_categorical(pred, gt):
     # Flatten logit ranks from [B, ...SPATIAL..., C, L] to [-1, L]
     flat_logit_ranks = jnp.reshape(logit_ranks, (-1, logit_ranks.shape[-1]))
     # Flatten gt from [B, ...SPATIAL..., C] to [-1,]
-    flat_gt = jnp.reshape(gt, (-1, 1))
+    flat_gt = jnp.reshape(gt, (-1,))
 
     # Perform argwhere for a single location and channel
     def argwhere(logit_ranks, gt):
