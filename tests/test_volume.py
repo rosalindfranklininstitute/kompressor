@@ -442,3 +442,83 @@ class VolumeTest(unittest.TestCase):
         self.assertEqual(reconstructed_highres.dtype, highres.dtype)
         self.assertEqual(reconstructed_highres.ndim, highres.ndim)
         self.assertTrue(np.allclose(reconstructed_highres, highres))
+
+    def encode_decode_chunks(self, encode_chunk, decode_chunk):
+
+        shape = (1, 17, 17, 17, 1)
+        highres = (jnp.arange(np.prod(shape)).reshape(shape) % 256).astype(jnp.uint8)
+
+        # Dummy predictor function just predicts all ones
+        def predictions_fn(lowres):
+            predictions = jnp.ones((lowres.shape[0],
+                                    lowres.shape[1] - 1,
+                                    lowres.shape[2] - 1,
+                                    lowres.shape[3] - 1,
+                                    19, *lowres.shape[4:]), dtype=lowres.dtype)
+            return kom.volume.maps_from_predictions(predictions)
+
+        encode_fn = kom.utils.encode_values_uint8
+        decode_fn = kom.utils.decode_values_uint8
+
+        lowres, maps = kom.volume.encode(predictions_fn, encode_fn, highres)
+        lrmap, udmap, fbmap, cmap, zmap, ymap, xmap = maps
+
+        chunk_lowres, chunk_maps = kom.volume.encode_chunks(predictions_fn, encode_fn, highres, chunk=encode_chunk)
+        chunk_lrmap, chunk_udmap, chunk_fbmap, chunk_cmap, chunk_zmap, chunk_ymap, chunk_xmap = chunk_maps
+
+        self.assertEqual(chunk_lowres.dtype, lowres.dtype)
+        self.assertEqual(chunk_lowres.ndim, lowres.ndim)
+        self.assertTrue(np.allclose(chunk_lowres, lowres))
+
+        self.assertEqual(chunk_lrmap.dtype, lrmap.dtype)
+        self.assertEqual(chunk_lrmap.ndim, lrmap.ndim)
+        self.assertTrue(np.allclose(chunk_lrmap, lrmap))
+
+        self.assertEqual(chunk_udmap.dtype, udmap.dtype)
+        self.assertEqual(chunk_udmap.ndim, udmap.ndim)
+        self.assertTrue(np.allclose(chunk_udmap, udmap))
+
+        self.assertEqual(chunk_fbmap.dtype, fbmap.dtype)
+        self.assertEqual(chunk_fbmap.ndim, fbmap.ndim)
+        self.assertTrue(np.allclose(chunk_fbmap, fbmap))
+
+        self.assertEqual(chunk_cmap.dtype, cmap.dtype)
+        self.assertEqual(chunk_cmap.ndim, cmap.ndim)
+        self.assertTrue(np.allclose(chunk_cmap, cmap))
+
+        self.assertEqual(chunk_zmap.dtype, zmap.dtype)
+        self.assertEqual(chunk_zmap.ndim, zmap.ndim)
+        self.assertTrue(np.allclose(chunk_zmap, zmap))
+
+        self.assertEqual(chunk_ymap.dtype, ymap.dtype)
+        self.assertEqual(chunk_ymap.ndim, ymap.ndim)
+        self.assertTrue(np.allclose(chunk_ymap, ymap))
+
+        self.assertEqual(chunk_xmap.dtype, xmap.dtype)
+        self.assertEqual(chunk_xmap.ndim, xmap.ndim)
+        self.assertTrue(np.allclose(chunk_xmap, xmap))
+
+        chunk_highres = kom.volume.decode_chunks(predictions_fn, decode_fn, chunk_lowres, chunk_maps,
+                                                 chunk=decode_chunk)
+
+        self.assertEqual(chunk_highres.dtype, highres.dtype)
+        self.assertEqual(chunk_highres.ndim, highres.ndim)
+        self.assertTrue(np.allclose(chunk_highres, highres))
+
+    def test_encode_decode_chunks_2_2(self):
+        self.encode_decode_chunks(encode_chunk=2, decode_chunk=2)
+
+    def test_encode_decode_chunks_2_3(self):
+        self.encode_decode_chunks(encode_chunk=2, decode_chunk=3)
+
+    def test_encode_decode_chunks_3_2(self):
+        self.encode_decode_chunks(encode_chunk=3, decode_chunk=2)
+
+    def test_encode_decode_chunks_10_10(self):
+        self.encode_decode_chunks(encode_chunk=10, decode_chunk=10)
+
+    def test_encode_decode_chunks_2_10(self):
+        self.encode_decode_chunks(encode_chunk=2, decode_chunk=10)
+
+    def test_encode_decode_chunks_10_2(self):
+        self.encode_decode_chunks(encode_chunk=10, decode_chunk=2)
