@@ -1,8 +1,15 @@
 mock
 pytest
+pytest-cov
+PyYAML
+coveralls
+coverage
+tqdm
 numpy
 nptyping
-pandas
+scipy
 h5py
+pandas
+matplotlib
 jax
 jaxlib

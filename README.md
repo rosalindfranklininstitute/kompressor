@@ -12,7 +12,7 @@ cd Kompressor
 pip install -e .
 
 # Run tests
-python -m pytest tests/*
+python -m pytest --cov=src/kompressor tests/
 ```
 
 ## Install & Run through Docker environment
