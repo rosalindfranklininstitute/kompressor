@@ -20,6 +20,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+from itertools import product
 
 import jax
 import jax.numpy as jnp
@@ -163,55 +164,31 @@ def encode_chunks(predictions_fn, encode_fn, highres, chunk=32, progress_fn=None
     lh, lw = lowres.shape[1:3]
 
     # Extract the plus values from the highres image
-    gt_lrmap, gt_udmap, gt_cmap = maps_from_highres(highres)
+    gt_maps = maps_from_highres(highres)
 
     # Pre-allocate full encoded maps
-    encoded_lrmap = jnp.zeros_like(gt_lrmap)
-    encoded_udmap = jnp.zeros_like(gt_udmap)
-    encoded_cmap  = jnp.zeros_like(gt_cmap)
+    encoded_maps = [jnp.zeros_like(gt_map) for gt_map in gt_maps]
 
-    # Update a chunk of the encoded map given a chunk of predictions and the gt map
-    def update_map_chunk(encoded_map, y, x, chunk_pred_map, gt_map):
-        ph, pw = chunk_pred_map.shape[1:3]
-        chunk_encoded_map = encode_fn(chunk_pred_map, gt_map[:, y:(y+ph), x:(x+pw)])
-        return encoded_map.at[:, y:(y+ph), x:(x+pw)].set(chunk_encoded_map)
+    def yield_chunks(max_value, chunk):
+        return map(lambda idx0 : (idx0, min(max_value, idx0+chunk)),
+                   range(0, max_value-(1 if ((max_value % chunk) == 1) else 0), chunk))
 
-    def yield_chunks():
-
-        for ly0 in range(0, lh, chunk):
-            ly1 = min(lh, ly0+chunk)
-
-            # Skip chunks with size 1 in this axis
-            if (ly1 - ly0) <= 1:
-                continue
-
-            for lx0 in range(0, lw, chunk):
-                lx1 = min(lw, lx0+chunk)
-
-                # Skip chunks with size 1 in this axis
-                if (lx1 - lx0) <= 1:
-                    continue
-
-                yield (ly0, ly1), (lx0, lx1)
-
-    chunks = yield_chunks()
+    chunks = product(yield_chunks(lh, chunk), yield_chunks(lw, chunk))
     if progress_fn is not None:
         # If a progress callback was given wrap the list of chunks
         chunks = progress_fn(list(chunks))
 
     for (ly0, ly1), (lx0, lx1) in chunks:
-        # Extract this chunk from the lowres
-        chunk_lowres = lowres[:, ly0:min(lh, ly1+1), lx0:min(lw, lx1+1)]
-
         # Extract the chunks predicted values from the lowres chunk
-        chunk_pred_lrmap, chunk_pred_udmap, chunk_pred_cmap = predictions_fn(chunk_lowres)
+        chunk_pred_maps = predictions_fn(lowres[:, ly0:min(lh, ly1+1), lx0:min(lw, lx1+1)])
 
         # Update each encoded maps with the values for this chunk
-        encoded_lrmap = update_map_chunk(encoded_lrmap, ly0, lx0, chunk_pred_lrmap, gt_lrmap)
-        encoded_udmap = update_map_chunk(encoded_udmap, ly0, lx0, chunk_pred_udmap, gt_udmap)
-        encoded_cmap  = update_map_chunk(encoded_cmap,  ly0, lx0, chunk_pred_cmap,  gt_cmap)
+        for idx, (chunk_pred_map, gt_map) in enumerate(zip(chunk_pred_maps, gt_maps)):
+            ph, pw = chunk_pred_map.shape[1:3]
+            chunk_encoded_map = encode_fn(chunk_pred_map, gt_map[:, ly0:(ly0+ph), lx0:(lx0+pw)])
+            encoded_maps[idx] = encoded_maps[idx].at[:, ly0:(ly0+ph), lx0:(lx0+pw)].set(chunk_encoded_map)
 
-    return lowres, (encoded_lrmap, encoded_udmap, encoded_cmap)
+    return lowres, encoded_maps
 
 
 def decode_chunks(predictions_fn, decode_fn, lowres, encoded_maps, chunk=32, progress_fn=None):
@@ -224,57 +201,29 @@ def decode_chunks(predictions_fn, decode_fn, lowres, encoded_maps, chunk=32, pro
     assert lh >= 2
     assert lw >= 2
 
-    # Unpack the encoded maps
-    encoded_lrmap, encoded_udmap, encoded_cmap = encoded_maps
-
     # Pre-allocate full decoded maps
-    decoded_lrmap = jnp.zeros_like(encoded_lrmap)
-    decoded_udmap = jnp.zeros_like(encoded_udmap)
-    decoded_cmap  = jnp.zeros_like(encoded_cmap)
+    decoded_maps = [jnp.zeros_like(encoded_map) for encoded_map in encoded_maps]
 
-    # Update a chunk of the encoded map given a chunk of predictions and the gt map
-    def update_map_chunk(decoded_map, y, x, chunk_pred_map, encoded_map):
-        ph, pw = chunk_pred_map.shape[1:3]
-        chunk_decoded_map = decode_fn(chunk_pred_map, encoded_map[:, y:(y+ph), x:(x+pw)])
-        return decoded_map.at[:, y:(y+ph), x:(x+pw)].set(chunk_decoded_map)
+    def yield_chunks(max_value, chunk):
+        return map(lambda idx0 : (idx0, min(max_value, idx0+chunk)),
+                   range(0, max_value-(1 if ((max_value % chunk) == 1) else 0), chunk))
 
-    def yield_chunks():
-
-        for ly0 in range(0, lh, chunk):
-            ly1 = min(lh, ly0+chunk)
-
-            # Skip chunks with size 1 in this axis
-            if (ly1 - ly0) <= 1:
-                continue
-
-            for lx0 in range(0, lw, chunk):
-                lx1 = min(lw, lx0+chunk)
-
-                # Skip chunks with size 1 in this axis
-                if (lx1 - lx0) <= 1:
-                    continue
-
-                yield (ly0, ly1), (lx0, lx1)
-
-    chunks = yield_chunks()
+    chunks = product(yield_chunks(lh, chunk), yield_chunks(lw, chunk))
     if progress_fn is not None:
         # If a progress callback was given wrap the list of chunks
         chunks = progress_fn(list(chunks))
 
     for (ly0, ly1), (lx0, lx1) in chunks:
-
-        # Extract this chunk from the lowres
-        chunk_lowres = lowres[:, ly0:min(lh, ly1+1), lx0:min(lw, lx1+1)]
-
         # Extract the chunks predicted values from the lowres chunk
-        chunk_pred_lrmap, chunk_pred_udmap, chunk_pred_cmap = predictions_fn(chunk_lowres)
+        chunk_pred_maps = predictions_fn(lowres[:, ly0:min(lh, ly1+1), lx0:min(lw, lx1+1)])
 
         # Update each decoded maps with the values for this chunk
-        decoded_lrmap = update_map_chunk(decoded_lrmap, ly0, lx0, chunk_pred_lrmap, encoded_lrmap)
-        decoded_udmap = update_map_chunk(decoded_udmap, ly0, lx0, chunk_pred_udmap, encoded_udmap)
-        decoded_cmap  = update_map_chunk(decoded_cmap,  ly0, lx0, chunk_pred_cmap,  encoded_cmap)
+        for idx, (chunk_pred_map, encoded_map) in enumerate(zip(chunk_pred_maps, encoded_maps)):
+            ph, pw = chunk_pred_map.shape[1:3]
+            chunk_decoded_map = decode_fn(chunk_pred_map, encoded_map[:, ly0:(ly0+ph), lx0:(lx0+pw)])
+            decoded_maps[idx] = decoded_maps[idx].at[:, ly0:(ly0+ph), lx0:(lx0+pw)].set(chunk_decoded_map)
 
     # Reconstruct highres image from the corrected true values
-    highres = highres_from_lowres_and_maps(lowres, (decoded_lrmap, decoded_udmap, decoded_cmap))
+    highres = highres_from_lowres_and_maps(lowres, decoded_maps)
 
     return highres

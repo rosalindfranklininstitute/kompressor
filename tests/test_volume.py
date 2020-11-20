@@ -520,6 +520,15 @@ class VolumeTest(unittest.TestCase):
     def test_encode_decode_chunks_3_2(self):
         self.encode_decode_chunks(encode_chunk=3, decode_chunk=2)
 
+    def test_encode_decode_chunks_7_7(self):
+        self.encode_decode_chunks(encode_chunk=7, decode_chunk=7)
+
+    def test_encode_decode_chunks_2_7(self):
+        self.encode_decode_chunks(encode_chunk=2, decode_chunk=7)
+
+    def test_encode_decode_chunks_7_2(self):
+        self.encode_decode_chunks(encode_chunk=7, decode_chunk=2)
+
     def test_encode_decode_chunks_10_10(self):
         self.encode_decode_chunks(encode_chunk=10, decode_chunk=10)
 
