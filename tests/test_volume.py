@@ -23,11 +23,13 @@
 
 # Utility imports
 import unittest
-
-# Test imports
+from functools import partial
+from tqdm import tqdm
 import numpy as np
 import jax
 import jax.numpy as jnp
+
+# Test imports
 import kompressor as kom
 
 
@@ -445,6 +447,9 @@ class VolumeTest(unittest.TestCase):
 
     def encode_decode_chunks(self, encode_chunk, decode_chunk):
 
+        encode_progress_fn = partial(tqdm, desc=f'kom.volume.encode_chunks chunk={encode_chunk:d}')
+        decode_progress_fn = partial(tqdm, desc=f'kom.volume.decode_chunks chunk={decode_chunk:d}')
+
         shape = (1, 17, 17, 17, 1)
         highres = (jnp.arange(np.prod(shape)).reshape(shape) % 256).astype(jnp.uint8)
 
@@ -463,7 +468,8 @@ class VolumeTest(unittest.TestCase):
         lowres, maps = kom.volume.encode(predictions_fn, encode_fn, highres)
         lrmap, udmap, fbmap, cmap, zmap, ymap, xmap = maps
 
-        chunk_lowres, chunk_maps = kom.volume.encode_chunks(predictions_fn, encode_fn, highres, chunk=encode_chunk)
+        chunk_lowres, chunk_maps = kom.volume.encode_chunks(predictions_fn, encode_fn, highres,
+                                                            chunk=encode_chunk, progress_fn=encode_progress_fn)
         chunk_lrmap, chunk_udmap, chunk_fbmap, chunk_cmap, chunk_zmap, chunk_ymap, chunk_xmap = chunk_maps
 
         self.assertEqual(chunk_lowres.dtype, lowres.dtype)
@@ -499,7 +505,7 @@ class VolumeTest(unittest.TestCase):
         self.assertTrue(np.allclose(chunk_xmap, xmap))
 
         chunk_highres = kom.volume.decode_chunks(predictions_fn, decode_fn, chunk_lowres, chunk_maps,
-                                                 chunk=decode_chunk)
+                                                 chunk=decode_chunk, progress_fn=decode_progress_fn)
 
         self.assertEqual(chunk_highres.dtype, highres.dtype)
         self.assertEqual(chunk_highres.ndim, highres.ndim)

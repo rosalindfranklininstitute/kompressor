@@ -229,7 +229,7 @@ def decode(predictions_fn, decode_fn, lowres, encoded_maps):
     return highres
 
 
-def encode_chunks(predictions_fn, encode_fn, highres, chunk=8):
+def encode_chunks(predictions_fn, encode_fn, highres, chunk=8, progress_fn=None):
 
     # Assert chunk size is valid
     assert chunk > 1
@@ -262,48 +262,59 @@ def encode_chunks(predictions_fn, encode_fn, highres, chunk=8):
         chunk_encoded_map = encode_fn(chunk_pred_map, gt_map[:, z:(z+pd), y:(y+ph), x:(x+pw)])
         return encoded_map.at[:, z:(z+pd), y:(y+ph), x:(x+pw)].set(chunk_encoded_map)
 
-    for lz0 in range(0, ld, chunk):
-        lz1 = min(ld, lz0+chunk)
+    def yield_chunks():
 
-        # Skip chunks with size 1 in this axis
-        if (lz1 - lz0) <= 1:
-            continue
-
-        for ly0 in range(0, lh, chunk):
-            ly1 = min(lh, ly0+chunk)
+        for lz0 in range(0, ld, chunk):
+            lz1 = min(ld, lz0+chunk)
 
             # Skip chunks with size 1 in this axis
-            if (ly1 - ly0) <= 1:
+            if (lz1 - lz0) <= 1:
                 continue
 
-            for lx0 in range(0, lw, chunk):
-                lx1 = min(lw, lx0+chunk)
+            for ly0 in range(0, lh, chunk):
+                ly1 = min(lh, ly0+chunk)
 
                 # Skip chunks with size 1 in this axis
-                if (lx1 - lx0) <= 1:
+                if (ly1 - ly0) <= 1:
                     continue
 
-                # Extract this chunk from the lowres
-                chunk_lowres = lowres[:, lz0:min(ld, lz1+1), ly0:min(lh, ly1+1), lx0:min(lw, lx1+1)]
+                for lx0 in range(0, lw, chunk):
+                    lx1 = min(lw, lx0+chunk)
 
-                # Extract the chunks predicted values from the lowres chunk
-                chunk_pred_lrmap, chunk_pred_udmap, chunk_pred_fbmap, chunk_pred_cmap,\
-                    chunk_pred_zmap, chunk_pred_ymap, chunk_pred_xmap = predictions_fn(chunk_lowres)
+                    # Skip chunks with size 1 in this axis
+                    if (lx1 - lx0) <= 1:
+                        continue
 
-                # Update each encoded maps with the values for this chunk
-                encoded_lrmap = update_map_chunk(encoded_lrmap, lz0, ly0, lx0, chunk_pred_lrmap, gt_lrmap)
-                encoded_udmap = update_map_chunk(encoded_udmap, lz0, ly0, lx0, chunk_pred_udmap, gt_udmap)
-                encoded_fbmap = update_map_chunk(encoded_fbmap, lz0, ly0, lx0, chunk_pred_fbmap, gt_fbmap)
-                encoded_cmap  = update_map_chunk(encoded_cmap,  lz0, ly0, lx0, chunk_pred_cmap,  gt_cmap)
-                encoded_zmap  = update_map_chunk(encoded_zmap,  lz0, ly0, lx0, chunk_pred_zmap,  gt_zmap)
-                encoded_ymap  = update_map_chunk(encoded_ymap,  lz0, ly0, lx0, chunk_pred_ymap,  gt_ymap)
-                encoded_xmap  = update_map_chunk(encoded_xmap,  lz0, ly0, lx0, chunk_pred_xmap,  gt_xmap)
+                    yield (lz0, lz1), (ly0, ly1), (lx0, lx1)
+
+    chunks = yield_chunks()
+    if progress_fn is not None:
+        # If a progress callback was given wrap the list of chunks
+        chunks = progress_fn(list(chunks))
+
+    for (lz0, lz1), (ly0, ly1), (lx0, lx1) in chunks:
+
+        # Extract this chunk from the lowres
+        chunk_lowres = lowres[:, lz0:min(ld, lz1+1), ly0:min(lh, ly1+1), lx0:min(lw, lx1+1)]
+
+        # Extract the chunks predicted values from the lowres chunk
+        chunk_pred_lrmap, chunk_pred_udmap, chunk_pred_fbmap, chunk_pred_cmap,\
+            chunk_pred_zmap, chunk_pred_ymap, chunk_pred_xmap = predictions_fn(chunk_lowres)
+
+        # Update each encoded maps with the values for this chunk
+        encoded_lrmap = update_map_chunk(encoded_lrmap, lz0, ly0, lx0, chunk_pred_lrmap, gt_lrmap)
+        encoded_udmap = update_map_chunk(encoded_udmap, lz0, ly0, lx0, chunk_pred_udmap, gt_udmap)
+        encoded_fbmap = update_map_chunk(encoded_fbmap, lz0, ly0, lx0, chunk_pred_fbmap, gt_fbmap)
+        encoded_cmap  = update_map_chunk(encoded_cmap,  lz0, ly0, lx0, chunk_pred_cmap,  gt_cmap)
+        encoded_zmap  = update_map_chunk(encoded_zmap,  lz0, ly0, lx0, chunk_pred_zmap,  gt_zmap)
+        encoded_ymap  = update_map_chunk(encoded_ymap,  lz0, ly0, lx0, chunk_pred_ymap,  gt_ymap)
+        encoded_xmap  = update_map_chunk(encoded_xmap,  lz0, ly0, lx0, chunk_pred_xmap,  gt_xmap)
 
     return lowres, (encoded_lrmap, encoded_udmap, encoded_fbmap, encoded_cmap,
                     encoded_zmap, encoded_ymap, encoded_xmap)
 
 
-def decode_chunks(predictions_fn, decode_fn, lowres, encoded_maps, chunk=8):
+def decode_chunks(predictions_fn, decode_fn, lowres, encoded_maps, chunk=8, progress_fn=None):
 
     # Assert chunk size is valid
     assert chunk > 1
@@ -333,42 +344,53 @@ def decode_chunks(predictions_fn, decode_fn, lowres, encoded_maps, chunk=8):
         chunk_decoded_map = decode_fn(chunk_pred_map, encoded_map[:, z:(z+pd), y:(y+ph), x:(x+pw)])
         return decoded_map.at[:, z:(z+pd), y:(y+ph), x:(x+pw)].set(chunk_decoded_map)
 
-    for lz0 in range(0, ld, chunk):
-        lz1 = min(ld, lz0+chunk)
+    def yield_chunks():
 
-        # Skip chunks with size 1 in this axis
-        if (lz1 - lz0) <= 1:
-            continue
-
-        for ly0 in range(0, lh, chunk):
-            ly1 = min(lh, ly0+chunk)
+        for lz0 in range(0, ld, chunk):
+            lz1 = min(ld, lz0+chunk)
 
             # Skip chunks with size 1 in this axis
-            if (ly1 - ly0) <= 1:
+            if (lz1 - lz0) <= 1:
                 continue
 
-            for lx0 in range(0, lw, chunk):
-                lx1 = min(lw, lx0+chunk)
+            for ly0 in range(0, lh, chunk):
+                ly1 = min(lh, ly0+chunk)
 
                 # Skip chunks with size 1 in this axis
-                if (lx1 - lx0) <= 1:
+                if (ly1 - ly0) <= 1:
                     continue
 
-                # Extract this chunk from the lowres
-                chunk_lowres = lowres[:, lz0:min(ld, lz1+1), ly0:min(lh, ly1+1), lx0:min(lw, lx1+1)]
+                for lx0 in range(0, lw, chunk):
+                    lx1 = min(lw, lx0+chunk)
 
-                # Extract the chunks predicted values from the lowres chunk
-                chunk_pred_lrmap, chunk_pred_udmap, chunk_pred_fbmap, chunk_pred_cmap,\
-                    chunk_pred_zmap, chunk_pred_ymap, chunk_pred_xmap = predictions_fn(chunk_lowres)
+                    # Skip chunks with size 1 in this axis
+                    if (lx1 - lx0) <= 1:
+                        continue
 
-                # Update each decoded maps with the values for this chunk
-                decoded_lrmap = update_map_chunk(decoded_lrmap, lz0, ly0, lx0, chunk_pred_lrmap, encoded_lrmap)
-                decoded_udmap = update_map_chunk(decoded_udmap, lz0, ly0, lx0, chunk_pred_udmap, encoded_udmap)
-                decoded_fbmap = update_map_chunk(decoded_fbmap, lz0, ly0, lx0, chunk_pred_fbmap, encoded_fbmap)
-                decoded_cmap  = update_map_chunk(decoded_cmap,  lz0, ly0, lx0, chunk_pred_cmap,  encoded_cmap)
-                decoded_zmap  = update_map_chunk(decoded_zmap,  lz0, ly0, lx0, chunk_pred_zmap,  encoded_zmap)
-                decoded_ymap  = update_map_chunk(decoded_ymap,  lz0, ly0, lx0, chunk_pred_ymap,  encoded_ymap)
-                decoded_xmap  = update_map_chunk(decoded_xmap,  lz0, ly0, lx0, chunk_pred_xmap,  encoded_xmap)
+                    yield (lz0, lz1), (ly0, ly1), (lx0, lx1)
+
+    chunks = yield_chunks()
+    if progress_fn is not None:
+        # If a progress callback was given wrap the list of chunks
+        chunks = progress_fn(list(chunks))
+
+    for (lz0, lz1), (ly0, ly1), (lx0, lx1) in chunks:
+
+        # Extract this chunk from the lowres
+        chunk_lowres = lowres[:, lz0:min(ld, lz1+1), ly0:min(lh, ly1+1), lx0:min(lw, lx1+1)]
+
+        # Extract the chunks predicted values from the lowres chunk
+        chunk_pred_lrmap, chunk_pred_udmap, chunk_pred_fbmap, chunk_pred_cmap,\
+            chunk_pred_zmap, chunk_pred_ymap, chunk_pred_xmap = predictions_fn(chunk_lowres)
+
+        # Update each decoded maps with the values for this chunk
+        decoded_lrmap = update_map_chunk(decoded_lrmap, lz0, ly0, lx0, chunk_pred_lrmap, encoded_lrmap)
+        decoded_udmap = update_map_chunk(decoded_udmap, lz0, ly0, lx0, chunk_pred_udmap, encoded_udmap)
+        decoded_fbmap = update_map_chunk(decoded_fbmap, lz0, ly0, lx0, chunk_pred_fbmap, encoded_fbmap)
+        decoded_cmap  = update_map_chunk(decoded_cmap,  lz0, ly0, lx0, chunk_pred_cmap,  encoded_cmap)
+        decoded_zmap  = update_map_chunk(decoded_zmap,  lz0, ly0, lx0, chunk_pred_zmap,  encoded_zmap)
+        decoded_ymap  = update_map_chunk(decoded_ymap,  lz0, ly0, lx0, chunk_pred_ymap,  encoded_ymap)
+        decoded_xmap  = update_map_chunk(decoded_xmap,  lz0, ly0, lx0, chunk_pred_xmap,  encoded_xmap)
 
     # Reconstruct highres image from the corrected true values
     highres = highres_from_lowres_and_maps(lowres, (decoded_lrmap, decoded_udmap, decoded_fbmap, decoded_cmap,
