@@ -26,6 +26,16 @@ import jax.numpy as jnp
 
 
 @jax.jit
+def encode_values_raw(pred, gt):
+    return jnp.int32(gt) - jnp.int32(pred)
+
+
+@jax.jit
+def decode_values_raw(pred, encoded):
+    return jnp.int32(pred) + jnp.int32(encoded)
+
+
+@jax.jit
 def encode_values_uint8(pred, gt):
     return jnp.uint8(((jnp.int32(gt) - jnp.int32(pred)) + 256) % 256)
 
