@@ -57,18 +57,20 @@ class ImageTest(unittest.TestCase):
 
     def dummy_predictions_categorical_fn(self, padding):
 
-        # Dummy regression predictor function just predicts the average of the neighborhood features
+        # Dummy categorical predictor function just predicts a constant set of logits
         def predictions_fn(lowres):
-            # Extract the features for each neighborhood
-            features = kom.image.features_from_lowres(lowres, padding)
-            # Dummy predictions are just the average values of the neighborhoods
-            predictions = jnp.mean(features.astype(jnp.float32), axis=3, keepdims=True).astype(jnp.uint8)
-            predictions = jnp.repeat(predictions, repeats=5, axis=3)
+            # Sample a constant set of random logits (for test consistency)
+            key = jax.random.PRNGKey(1234)
+            logits = jax.random.uniform(key, (1, 1, 1, 5, *lowres.shape[3:], 256))
+            # Tile the same logits for every pixel and batch element
+            predictions = jnp.tile(logits, (lowres.shape[0],
+                                            (lowres.shape[1]-1) - (padding*2),
+                                            (lowres.shape[2]-1) - (padding*2),
+                                            1, *([1] * len(lowres.shape[3:])), 1))
             # Extract the maps from the predictions
             pred_maps = kom.image.maps_from_predictions(predictions)
             # Convert the predictions to dummy logits (one hot encodings)
-            return [jax.nn.softmax(jax.nn.one_hot(pred_map, num_classes=256), axis=-1)
-                    for pred_map in pred_maps]
+            return [jax.nn.softmax(pred_map, axis=-1) for pred_map in pred_maps]
 
         return predictions_fn
 
@@ -475,12 +477,81 @@ class ImageTest(unittest.TestCase):
                 self.assertTrue(np.allclose(cmap, full_cmap))
 
                 # Decode the image in one pass
-                reconstructed_highres = kom.image.decode(predictions_fn, decode_fn, lowres, maps, padding=padding)
+                full_highres = kom.image.decode(predictions_fn, decode_fn, lowres, maps, padding=padding)
 
                 # Check the decoded image is lossless
-                self.assertEqual(reconstructed_highres.dtype, highres.dtype)
-                self.assertEqual(reconstructed_highres.ndim, highres.ndim)
-                self.assertTrue(np.allclose(reconstructed_highres, highres))
+                self.assertEqual(full_highres.dtype, highres.dtype)
+                self.assertEqual(full_highres.ndim, highres.ndim)
+                self.assertTrue(np.allclose(full_highres, highres))
+
+                # Decode the image in chunks
+                chunk_highres = kom.image.decode_chunks(predictions_fn, decode_fn, lowres, maps,
+                                                        chunk=decode_chunk, padding=padding,
+                                                        progress_fn=decode_progress_fn)
+
+                # Check the decoded image is lossless
+                self.assertEqual(chunk_highres.dtype, highres.dtype)
+                self.assertEqual(chunk_highres.ndim, highres.ndim)
+                self.assertTrue(np.allclose(chunk_highres, highres))
+
+    def test_encode_decode_chunks_categorical(self):
+        """
+        Test we can do an encode + decode cycle on an image processing the input in chunks and with different paddings
+        with a categorical predictions function.
+        """
+
+        for encode_chunk, decode_chunk, padding in product([2, 3, 10], [2, 3, 10], range(4)):
+            with self.subTest(encode_chunk=encode_chunk, decode_chunk=decode_chunk, padding=padding):
+
+                # Make logging functions for this test
+                encode_progress_fn = partial(tqdm, desc=f'kom.image.encode_chunks '
+                                                        f'encode_chunk={encode_chunk}, padding={padding}')
+                decode_progress_fn = partial(tqdm, desc=f'kom.image.decode_chunks '
+                                                        f'decode_chunk={decode_chunk}, padding={padding}')
+
+                # Make a prediction function for this test
+                predictions_fn = self.dummy_predictions_categorical_fn(padding=padding)
+                encode_fn = kom.utils.encode_categorical
+                decode_fn = kom.utils.decode_categorical
+
+                # Get a dummy highres image to encode + decode
+                highres = self.dummy_highres()
+
+                # Encode the entire input at once to check for consistency
+                full_lowres, full_maps = kom.image.encode(predictions_fn, encode_fn, highres, padding=padding)
+                full_lrmap, full_udmap, full_cmap = full_maps
+
+                # Encode the input in chunks
+                lowres, maps = kom.image.encode_chunks(predictions_fn, encode_fn, highres,
+                                                       chunk=encode_chunk, padding=padding,
+                                                       progress_fn=encode_progress_fn)
+
+                # Check that processing in chunks gives the same results as processing all at once
+                lrmap, udmap, cmap = maps
+
+                self.assertEqual(lowres.dtype, full_lowres.dtype)
+                self.assertEqual(lowres.ndim, full_lowres.ndim)
+                self.assertTrue(np.allclose(lowres, full_lowres))
+
+                self.assertEqual(lrmap.dtype, full_lrmap.dtype)
+                self.assertEqual(lrmap.ndim, full_lrmap.ndim)
+                self.assertTrue(np.allclose(lrmap, full_lrmap))
+
+                self.assertEqual(udmap.dtype, full_udmap.dtype)
+                self.assertEqual(udmap.ndim, full_udmap.ndim)
+                self.assertTrue(np.allclose(udmap, full_udmap))
+
+                self.assertEqual(cmap.dtype, full_cmap.dtype)
+                self.assertEqual(cmap.ndim, full_cmap.ndim)
+                self.assertTrue(np.allclose(cmap, full_cmap))
+
+                # Decode the image in one pass
+                full_highres = kom.image.decode(predictions_fn, decode_fn, lowres, maps, padding=padding)
+
+                # Check the decoded image is lossless
+                self.assertEqual(full_highres.dtype, highres.dtype)
+                self.assertEqual(full_highres.ndim, highres.ndim)
+                self.assertTrue(np.allclose(full_highres, highres))
 
                 # Decode the image in chunks
                 chunk_highres = kom.image.decode_chunks(predictions_fn, decode_fn, lowres, maps,
