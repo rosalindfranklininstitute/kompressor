@@ -20,7 +20,20 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+# Import the common encode decode pairs for handling individual maps
+from ..utils import \
+    encode_values_raw, decode_values_raw, \
+    encode_values_uint8, decode_values_uint8, \
+    encode_values_uint16, decode_values_uint16, \
+    encode_categorical, decode_categorical
 
-from kompressor import image, volume
+# Import the 3D image utility functions
+from .utils import \
+    targets_from_highres, lowres_from_highres, \
+    maps_from_predictions, maps_from_highres, \
+    highres_from_lowres_and_maps, \
+    features_from_lowres, chunk_from_lowres
 
-VERSION = 'v1.0a'
+# Import the 3D image encode decode functions
+from .encode_decode import \
+    encode, decode, encode_chunks, decode_chunks

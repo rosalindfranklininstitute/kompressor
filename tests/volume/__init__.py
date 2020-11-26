@@ -20,7 +20,3 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-
-from kompressor import image, volume
-
-VERSION = 'v1.0a'
