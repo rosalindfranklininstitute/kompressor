@@ -109,3 +109,24 @@ def decode_categorical(pred, encoded):
     decoded = jnp.reshape(flat_decoded, shape)
 
     return decoded
+
+
+def yield_chunks(max_value, chunk):
+    # Assert max value is positive
+    assert max_value > 0
+
+    # Assert chunk size is valid
+    assert chunk > 1
+
+    # Yield a set of chunks along one axis including boundary conditions
+    for idx in range(0, max_value, chunk):
+        # Is this the last chunk?
+        last = ((idx + chunk) < max_value)
+        # Determine if this chunk needs start or end padding
+        p0, p1 = (1 if (idx > 0) else 0), (1 if last else 0)
+        # Determine the start and end coordinates of this chunk
+        i1 = min(max_value, idx+chunk+1)
+        # Pad the start of the chunk by 1 extra pixel if it is the last and a singleton
+        i0 = max(0, idx-(0 if (last and ((i1-idx) <= 1)) else 1))
+        # Yield the chunk
+        yield (i0, i1), (p0, p1)
