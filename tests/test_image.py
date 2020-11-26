@@ -37,7 +37,7 @@ import kompressor as kom
 class ImageTest(unittest.TestCase):
 
     def dummy_highres(self):
-        shape = (1, 17, 17, 1)
+        shape = (2, 17, 17, 3)
         highres = (jnp.arange(np.prod(shape)).reshape(shape) % 256).astype(jnp.uint8)
         return highres
 
