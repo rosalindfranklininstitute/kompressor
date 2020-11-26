@@ -24,10 +24,7 @@
 # Utility imports
 import unittest
 from itertools import product
-from functools import partial
-from tqdm import tqdm
 import numpy as np
-import jax
 import jax.numpy as jnp
 
 # Test imports
