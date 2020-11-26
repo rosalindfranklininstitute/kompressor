@@ -36,9 +36,8 @@ import kompressor as kom
 
 class ImageTest(unittest.TestCase):
 
-    def dummy_highres(self):
-        shape = (2, 17, 17, 3)
-        highres = (jnp.arange(np.prod(shape)).reshape(shape) % 256).astype(jnp.uint8)
+    def dummy_highres(self, shape=(2, 17, 17, 3), max_value=256, dtype=jnp.uint8):
+        highres = (jnp.arange(np.prod(shape)).reshape(shape) % max_value).astype(dtype)
         return highres
 
     def dummy_predictions_fn(self, padding):
@@ -48,20 +47,20 @@ class ImageTest(unittest.TestCase):
             # Extract the features for each neighborhood
             features = kom.image.features_from_lowres(lowres, padding)
             # Dummy predictions are just the average values of the neighborhoods
-            predictions = jnp.mean(features.astype(jnp.float32), axis=3, keepdims=True).astype(jnp.uint8)
+            predictions = jnp.mean(features.astype(jnp.float32), axis=3, keepdims=True).astype(lowres.dtype)
             predictions = jnp.repeat(predictions, repeats=5, axis=3)
             # Extract the maps from the predictions
             return kom.image.maps_from_predictions(predictions)
 
         return predictions_fn
 
-    def dummy_predictions_categorical_fn(self, padding):
+    def dummy_predictions_categorical_fn(self, padding, classes):
 
         # Dummy categorical predictor function just predicts a constant set of logits
         def predictions_fn(lowres):
             # Sample a constant set of random logits (for test consistency)
             key = jax.random.PRNGKey(1234)
-            logits = jax.random.uniform(key, (1, 1, 1, 5, *lowres.shape[3:], 256))
+            logits = jax.random.uniform(key, (1, 1, 1, 5, *lowres.shape[3:], classes))
             # Tile the same logits for every pixel and batch element
             predictions = jnp.tile(logits, (lowres.shape[0],
                                             (lowres.shape[1]-1) - (padding*2),
@@ -79,7 +78,7 @@ class ImageTest(unittest.TestCase):
         Test extracting [B, H, W, 5, ...] training targets from the highres images.
         """
 
-        # Get a dummy highres image extract targets from
+        # Get a dummy highres image to extract targets from
         highres = self.dummy_highres()
 
         # Extract the targets that a model would be trained to predict
@@ -201,7 +200,7 @@ class ImageTest(unittest.TestCase):
 
     def test_highres_from_lowres_and_maps(self):
         """
-        Test reconstructing a highres image using an extracted lowres image and the extract ground truth maps.
+        Test reconstructing a highres image using an extracted lowres image and the extracted ground truth maps.
         """
 
         with self.subTest('Reconstruct using maps_from_highres'):
@@ -251,8 +250,10 @@ class ImageTest(unittest.TestCase):
                 lowres  = kom.image.lowres_from_highres(self.dummy_highres())
 
                 # Apply the correct padding to the lowres and then extract the features from the padded neighborhoods
-                padded_lowres = jnp.pad(lowres, ((0, 0), (padding, padding), (padding, padding), (0, 0)), mode='reflect')
-                features      = kom.image.features_from_lowres(padded_lowres, padding)
+                spatial_padding = [(padding, padding)] * 2
+                data_padding    = ((0, 0),) * len(lowres.shape[3:])
+                features = kom.image.features_from_lowres(jnp.pad(lowres, ((0, 0), *spatial_padding, *data_padding),
+                                                                  mode='symmetric'), padding)
 
                 # Check the extract features have the correct shape and dtype
                 self.assertEqual(features.dtype, lowres.dtype)
@@ -369,7 +370,7 @@ class ImageTest(unittest.TestCase):
             with self.subTest(padding=padding):
 
                 # Make a prediction function for this test
-                predictions_fn = self.dummy_predictions_categorical_fn(padding=padding)
+                predictions_fn = self.dummy_predictions_categorical_fn(padding=padding, classes=256)
                 encode_fn = kom.utils.encode_categorical
                 decode_fn = kom.utils.decode_categorical
 
@@ -431,7 +432,7 @@ class ImageTest(unittest.TestCase):
         Test we can do an encode + decode cycle on an image processing the input in chunks and with different paddings.
         """
 
-        for encode_chunk, decode_chunk, padding in product([2, 3, 10], [2, 3, 10], range(4)):
+        for encode_chunk, decode_chunk, padding in product([3, 10], [3, 10], range(2)):
             with self.subTest(encode_chunk=encode_chunk, decode_chunk=decode_chunk, padding=padding):
 
                 # Make logging functions for this test
@@ -500,7 +501,7 @@ class ImageTest(unittest.TestCase):
         with a categorical predictions function.
         """
 
-        for encode_chunk, decode_chunk, padding in product([2, 3, 10], [2, 3, 10], range(4)):
+        for encode_chunk, decode_chunk, padding in product([3, 10], [3, 10], range(2)):
             with self.subTest(encode_chunk=encode_chunk, decode_chunk=decode_chunk, padding=padding):
 
                 # Make logging functions for this test
@@ -510,7 +511,7 @@ class ImageTest(unittest.TestCase):
                                                         f'decode_chunk={decode_chunk}, padding={padding}')
 
                 # Make a prediction function for this test
-                predictions_fn = self.dummy_predictions_categorical_fn(padding=padding)
+                predictions_fn = self.dummy_predictions_categorical_fn(padding=padding, classes=256)
                 encode_fn = kom.utils.encode_categorical
                 decode_fn = kom.utils.decode_categorical
 
