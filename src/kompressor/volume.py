@@ -77,7 +77,7 @@ def maps_from_predictions(predictions):
     # Given a tensor of predictions for each neighborhood, decode the [B,D,H,W,19,...] predictions into 7 maps
     # Averages predictions when there are two for a pixel from adjacent neighborhoods.
 
-    # Determine the size of the highres image given the size of the predictions
+    # Determine the size of the highres volume given the size of the predictions
     dtype = predictions.dtype
     (batch_size, pd, ph, pw), channels = predictions.shape[:4], predictions.shape[5:]
 
@@ -149,7 +149,7 @@ def maps_from_predictions(predictions):
 
 @jax.jit
 def maps_from_highres(highres):
-    # Given a highres image extract the four maps of known values from the pluses
+    # Given a highres volume extract the four maps of known values from the pluses
     lrmap = highres[:, 1::2, 1::2,  ::2]
     udmap = highres[:, 1::2,  ::2, 1::2]
     fbmap = highres[:,  ::2, 1::2, 1::2]
@@ -165,17 +165,17 @@ def maps_from_highres(highres):
 
 @jax.jit
 def highres_from_lowres_and_maps(lowres, maps):
-    # Merge together a lowres image and the seven maps of known values representing the missing voxels
+    # Merge together a lowres volume and the seven maps of known values representing the missing voxels
     lrmap, udmap, fbmap, cmap, zmap, ymap, xmap = maps
 
-    # Determine the size of the highres image given the size of the lowres
+    # Determine the size of the highres volume given the size of the lowres
     dtype = lowres.dtype
     (batch_size, ld, lh, lw), channels = lowres.shape[:4], lowres.shape[4:]
     hd, hh, hw = ((ld - 1) * 2) + 1, ((lh - 1) * 2) + 1, ((lw - 1) * 2) + 1
 
-    # Image for containing the merged output
+    # Volume for containing the merged output
     highres = jnp.zeros((batch_size, hd, hh, hw, *channels), dtype=dtype)
-    highres = highres.at[:,  ::2,  ::2,  ::2].set(lowres)  # Apply the values from the lowres image
+    highres = highres.at[:,  ::2,  ::2,  ::2].set(lowres)  # Apply the values from the lowres volume
     highres = highres.at[:, 1::2, 1::2,  ::2].set(lrmap)   # Apply the values from the left and right of the pluses
     highres = highres.at[:, 1::2,  ::2, 1::2].set(udmap)   # Apply the values from the up and down of the pluses
     highres = highres.at[:,  ::2, 1::2, 1::2].set(fbmap)   # Apply the values from the front and back of the pluses
@@ -187,7 +187,24 @@ def highres_from_lowres_and_maps(lowres, maps):
     return highres
 
 
-def encode(predictions_fn, encode_fn, highres):
+# TODO make padding default to 0 when JAX merges being able to have static named args in jit functions
+@jax.partial(jax.jit, static_argnums=1)
+def features_from_lowres(lowres, padding):
+    # Extract the features around each 2x2x2 neighborhood (assumes the lowres is already padded)
+    pd, ph, pw = (lowres.shape[1] - (padding * 2)) - 1, \
+                 (lowres.shape[2] - (padding * 2)) - 1, \
+                 (lowres.shape[3] - (padding * 2)) - 1
+
+    # Extract the N neighbors and stack them together [B, D, H, W, N, ...] where N = ((padding * 2) + 1) ^ 3
+    return jnp.stack([lowres[:, z:(z+pd), y:(y+ph), x:(x+pw)]
+                      for z in range((padding*2)+2)
+                      for y in range((padding*2)+2)
+                      for x in range((padding*2)+2)], axis=4)
+
+
+def encode(predictions_fn, encode_fn, highres, padding=0):
+    # Assert valid padding
+    assert padding >= 0
 
     # Assert the input is large enough
     hd, hh, hw = highres.shape[1:4]
@@ -195,14 +212,16 @@ def encode(predictions_fn, encode_fn, highres):
     assert hh > 2 and (hh % 2) != 0
     assert hw > 2 and (hw % 2) != 0
 
-    # Extract the lowres image from the highres image
+    # Extract the lowres volume from the highres volume
     lowres = lowres_from_highres(highres)
 
-    # Extract the plus values from the highres image
+    # Extract the plus values from the highres volume
     gt_maps = maps_from_highres(highres)
 
-    # Extract the predicted values from the lowres image
-    pred_maps = predictions_fn(lowres)
+    # Extract the predicted values from the lowres volume
+    spatial_padding = [(padding, padding)] * 3
+    data_padding    = ((0, 0),) * len(lowres.shape[4:])
+    pred_maps       = predictions_fn(jnp.pad(lowres, ((0, 0), *spatial_padding, *data_padding), mode='symmetric'))
 
     # Compare the predictions to the true values for the pluses
     encoded_maps = [encode_fn(*maps) for maps in zip(pred_maps, gt_maps)]
@@ -210,7 +229,9 @@ def encode(predictions_fn, encode_fn, highres):
     return lowres, encoded_maps
 
 
-def decode(predictions_fn, decode_fn, lowres, encoded_maps):
+def decode(predictions_fn, decode_fn, lowres, encoded_maps, padding=0):
+    # Assert valid padding
+    assert padding >= 0
 
     # Assert the input is large enough
     ld, lh, lw = lowres.shape[1:4]
@@ -218,19 +239,75 @@ def decode(predictions_fn, decode_fn, lowres, encoded_maps):
     assert lh >= 2
     assert lw >= 2
 
-    # Extract the predicted values from the lowres image
-    pred_maps = predictions_fn(lowres)
+    # Extract the predicted values from the lowres volume
+    spatial_padding = [(padding, padding)] * 3
+    data_padding    = ((0, 0),) * len(lowres.shape[4:])
+    pred_maps       = predictions_fn(jnp.pad(lowres, ((0, 0), *spatial_padding, *data_padding), mode='symmetric'))
 
     # Correct the predictions using the provided encoded maps
     decoded_maps = [decode_fn(*maps) for maps in zip(pred_maps, encoded_maps)]
 
-    # Reconstruct highres image from the corrected true values
+    # Reconstruct highres volume from the corrected true values
     highres = highres_from_lowres_and_maps(lowres, decoded_maps)
 
     return highres
 
 
-def encode_chunks(predictions_fn, encode_fn, highres, chunk=8, progress_fn=None):
+def yield_chunks(max_value, chunk):
+    # Assert max value is positive
+    assert max_value > 0
+
+    # Assert chunk size is valid
+    assert chunk > 1
+
+    # Yield a set of chunks along one axis including boundary conditions
+    for idx in range(0, max_value, chunk):
+        # Is this the last chunk?
+        last = ((idx + chunk) < max_value)
+        # Determine if this chunk needs start or end padding
+        p0, p1 = (1 if (idx > 0) else 0), (1 if last else 0)
+        # Determine the start and end coordinates of this chunk
+        i1 = min(max_value, idx+chunk+1)
+        # Pad the start of the chunk by 1 extra pixel if it is the last and a singleton
+        i0 = max(0, idx-(0 if (last and ((i1-idx) <= 1)) else 1))
+        # Yield the chunk
+        yield (i0, i1), (p0, p1)
+
+
+def chunk_from_lowres(lowres, z, y, x, padding):
+    # Assert valid padding
+    assert padding >= 0
+
+    # Determine size of lowres input
+    ld, lh, lw = lowres.shape[1:4]
+
+    # Extract coordinates
+    (z0, z1), (y0, y1), (x0, x1) = z, y, x
+
+    # Assert chunk has valid size
+    assert (z1 - z0) >= 2
+    assert (y1 - y0) >= 2
+    assert (x1 - x0) >= 2
+
+    # Calculate the amount of padding we can collect directly from the input
+    cz0, cz1 = max(0, (z0-padding)), min(ld, (z1+padding))
+    cy0, cy1 = max(0, (y0-padding)), min(lh, (y1+padding))
+    cx0, cx1 = max(0, (x0-padding)), min(lw, (x1+padding))
+
+    # Calculate how much additional padding is still needed
+    pz0, pz1 = (padding - (z0 - cz0)), (padding - (cz1 - z1))
+    py0, py1 = (padding - (y0 - cy0)), (padding - (cy1 - y1))
+    px0, px1 = (padding - (x0 - cx0)), (padding - (cx1 - x1))
+
+    # Extract the chunk and apply the additional padding
+    spatial_padding = ((pz0, pz1), (py0, py1), (px0, px1))
+    data_padding    = ((0, 0),) * len(lowres.shape[4:])
+    return jnp.pad(lowres[:, cz0:cz1, cy0:cy1, cx0:cx1], ((0, 0), *spatial_padding, *data_padding), mode='symmetric')
+
+
+def encode_chunks(predictions_fn, encode_fn, highres, chunk=8, padding=0, progress_fn=None):
+    # Assert valid padding
+    assert padding >= 0
 
     # Assert chunk size is valid
     assert chunk > 1
@@ -241,39 +318,43 @@ def encode_chunks(predictions_fn, encode_fn, highres, chunk=8, progress_fn=None)
     assert hh > 2 and (hh % 2) != 0
     assert hw > 2 and (hw % 2) != 0
 
-    # Extract the lowres image from the highres image
+    # Extract the lowres volume from the highres volume
     lowres = lowres_from_highres(highres)
     ld, lh, lw = lowres.shape[1:4]
 
-    # Extract the plus values from the highres image
+    # Extract the plus values from the highres volume
     gt_maps = maps_from_highres(highres)
 
     # Pre-allocate full encoded maps
     encoded_maps = [jnp.zeros_like(gt_map) for gt_map in gt_maps]
-
-    def yield_chunks(max_value, chunk):
-        return map(lambda idx0 : (idx0, min(max_value, idx0+chunk)),
-                   range(0, max_value-(1 if ((max_value % chunk) == 1) else 0), chunk))
 
     chunks = product(yield_chunks(ld, chunk), yield_chunks(lh, chunk), yield_chunks(lw, chunk))
     if progress_fn is not None:
         # If a progress callback was given wrap the list of chunks
         chunks = progress_fn(list(chunks))
 
-    for (lz0, lz1), (ly0, ly1), (lx0, lx1) in chunks:
+    for ((z0, z1), (pz0, pz1)), ((y0, y1), (py0, py1)), ((x0, x1), (px0, px1)) in chunks:
+
         # Extract the chunks predicted values from the lowres chunk
-        chunk_pred_maps = predictions_fn(lowres[:, lz0:min(ld, lz1+1), ly0:min(lh, ly1+1), lx0:min(lw, lx1+1)])
+        chunk_pred_maps = predictions_fn(chunk_from_lowres(lowres, z=((z0-pz0), (z1+pz1)),
+                                                                   y=((y0-py0), (y1+py1)),
+                                                                   x=((x0-px0), (x1+px1)), padding=padding))
 
         # Update each encoded maps with the values for this chunk
         for idx, (chunk_pred_map, gt_map) in enumerate(zip(chunk_pred_maps, gt_maps)):
-            pd, ph, pw = chunk_pred_map.shape[1:4]
-            chunk_encoded_map = encode_fn(chunk_pred_map, gt_map[:, lz0:(lz0+pd), ly0:(ly0+ph), lx0:(lx0+pw)])
-            encoded_maps[idx] = encoded_maps[idx].at[:, lz0:(lz0+pd), ly0:(ly0+ph), lx0:(lx0+pw)].set(chunk_encoded_map)
+            pd, ph, pw = (chunk_pred_map.shape[1] - (pz0+pz1)), \
+                         (chunk_pred_map.shape[2] - (py0+py1)), \
+                         (chunk_pred_map.shape[3] - (px0+px1))
+            chunk_encoded_map = encode_fn(chunk_pred_map[:, pz0:(pz0+pd), py0:(py0+ph), px0:(px0+pw)],
+                                          gt_map[:, z0:(z0+pd), y0:(y0+ph), x0:(x0+pw)])
+            encoded_maps[idx] = encoded_maps[idx].at[:, z0:(z0+pd), y0:(y0+ph), x0:(x0+pw)].set(chunk_encoded_map)
 
     return lowres, encoded_maps
 
 
-def decode_chunks(predictions_fn, decode_fn, lowres, encoded_maps, chunk=8, progress_fn=None):
+def decode_chunks(predictions_fn, decode_fn, lowres, encoded_maps, chunk=8, padding=0, progress_fn=None):
+    # Assert valid padding
+    assert padding >= 0
 
     # Assert chunk size is valid
     assert chunk > 1
@@ -287,26 +368,28 @@ def decode_chunks(predictions_fn, decode_fn, lowres, encoded_maps, chunk=8, prog
     # Pre-allocate full decoded maps
     decoded_maps = [jnp.zeros_like(encoded_map) for encoded_map in encoded_maps]
 
-    def yield_chunks(max_value, chunk):
-        return map(lambda idx0 : (idx0, min(max_value, idx0+chunk)),
-                   range(0, max_value-(1 if ((max_value % chunk) == 1) else 0), chunk))
-
     chunks = product(yield_chunks(ld, chunk), yield_chunks(lh, chunk), yield_chunks(lw, chunk))
     if progress_fn is not None:
         # If a progress callback was given wrap the list of chunks
         chunks = progress_fn(list(chunks))
 
-    for (lz0, lz1), (ly0, ly1), (lx0, lx1) in chunks:
+    for ((z0, z1), (pz0, pz1)), ((y0, y1), (py0, py1)), ((x0, x1), (px0, px1)) in chunks:
+
         # Extract the chunks predicted values from the lowres chunk
-        chunk_pred_maps = predictions_fn(lowres[:, lz0:min(ld, lz1+1), ly0:min(lh, ly1+1), lx0:min(lw, lx1+1)])
+        chunk_pred_maps = predictions_fn(chunk_from_lowres(lowres, z=((z0-pz0), (z1+pz1)),
+                                                                   y=((y0-py0), (y1+py1)),
+                                                                   x=((x0-px0), (x1+px1)), padding=padding))
 
         # Update each decoded maps with the values for this chunk
         for idx, (chunk_pred_map, encoded_map) in enumerate(zip(chunk_pred_maps, encoded_maps)):
-            pd, ph, pw = chunk_pred_map.shape[1:4]
-            chunk_decoded_map = decode_fn(chunk_pred_map, encoded_map[:, lz0:(lz0+pd), ly0:(ly0+ph), lx0:(lx0+pw)])
-            decoded_maps[idx] = decoded_maps[idx].at[:, lz0:(lz0+pd), ly0:(ly0+ph), lx0:(lx0+pw)].set(chunk_decoded_map)
+            pd, ph, pw = (chunk_pred_map.shape[1] - (pz0+pz1)), \
+                         (chunk_pred_map.shape[2] - (py0+py1)), \
+                         (chunk_pred_map.shape[3] - (px0+px1))
+            chunk_decoded_map = decode_fn(chunk_pred_map[:, pz0:(pz0+pd), py0:(py0+ph), px0:(px0+pw)],
+                                          encoded_map[:, z0:(z0+pd), y0:(y0+ph), x0:(x0+pw)])
+            decoded_maps[idx] = decoded_maps[idx].at[:, z0:(z0+pd), y0:(y0+ph), x0:(x0+pw)].set(chunk_decoded_map)
 
-    # Reconstruct highres image from the corrected true values
+    # Reconstruct highres volume from the corrected true values
     highres = highres_from_lowres_and_maps(lowres, decoded_maps)
 
     return highres
