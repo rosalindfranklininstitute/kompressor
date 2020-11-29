@@ -23,7 +23,6 @@
 
 # Utility imports
 import unittest
-from itertools import product
 import numpy as np
 import jax.numpy as jnp
 
@@ -230,30 +229,26 @@ class ImageUtilsTest(unittest.TestCase):
                     *lowres.shape[3:]
                 ]))
 
-    def test_chunk_from_lowres(self):
+    def test_pad(self):
         """
-        Test we can extract chunks from a lowres image, padding should use real pixels from the rest of the image where
-        available and use symmetric padding where not.
+        Test we can pad a lowres image.
         """
 
-        for y, x, chunk, padding in product([0, 1, 7], [0, 1, 7], [2, 7, 10], range(4)):
-            with self.subTest(y=y, x=x, chunk=chunk, padding=padding):
+        for padding in range(4):
+            with self.subTest(padding=padding):
 
                 # Get a dummy lowres image to extract features from
-                lowres = kom.image.lowres_from_highres(self.dummy_highres())
+                lowres  = kom.image.lowres_from_highres(self.dummy_highres())
 
-                # Extract the desired chunk with the requested padding
-                chunk_lowres = kom.image.chunk_from_lowres(lowres,
-                                                           y=(y, min(lowres.shape[1], y+chunk)),
-                                                           x=(x, min(lowres.shape[2], x+chunk)),
-                                                           padding=padding)
+                # Apply the padding to the lowres
+                padded_lowres = kom.image.pad(lowres, padding)
 
                 # Check the extract features have the correct shape and dtype
-                self.assertEqual(chunk_lowres.dtype, lowres.dtype)
-                self.assertEqual(chunk_lowres.ndim, lowres.ndim)
-                self.assertTrue(np.allclose(chunk_lowres.shape, [
+                self.assertEqual(padded_lowres.dtype, lowres.dtype)
+                self.assertEqual(padded_lowres.ndim, lowres.ndim)
+                self.assertTrue(np.allclose(padded_lowres.shape, [
                     lowres.shape[0],
-                    (min(lowres.shape[1], y + chunk) - y) + (padding * 2),
-                    (min(lowres.shape[2], x + chunk) - x) + (padding * 2),
+                    lowres.shape[1] + (padding*2),
+                    lowres.shape[2] + (padding*2),
                     *lowres.shape[3:]
                 ]))

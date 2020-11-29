@@ -23,7 +23,6 @@
 
 # Utility imports
 import unittest
-from itertools import product
 import numpy as np
 import jax.numpy as jnp
 
@@ -319,32 +318,27 @@ class VolumeUtilsTest(unittest.TestCase):
                     *lowres.shape[4:]
                 ]))
 
-    def test_chunk_from_lowres(self):
+    def test_pad(self):
         """
-        Test we can extract chunks from a lowres volume, padding should use real pixels from the rest of the volume
-        where available and use symmetric padding where not.
+        Test we can pad a lowres volume.
         """
 
-        for z, y, x, chunk, padding in product([0, 1, 7], [0, 1, 7], [0, 1, 7], [2, 7, 10], range(4)):
-            with self.subTest(z=z, y=y, x=x, chunk=chunk, padding=padding):
+        for padding in range(4):
+            with self.subTest(padding=padding):
 
-                # Get a dummy lowres volume to extract features from
-                lowres = kom.volume.lowres_from_highres(self.dummy_highres())
+                # Get a dummy lowres image to extract features from
+                lowres  = kom.volume.lowres_from_highres(self.dummy_highres())
 
-                # Extract the desired chunk with the requested padding
-                chunk_lowres = kom.volume.chunk_from_lowres(lowres,
-                                                            z=(z, min(lowres.shape[1], z+chunk)),
-                                                            y=(y, min(lowres.shape[2], y+chunk)),
-                                                            x=(x, min(lowres.shape[3], x+chunk)),
-                                                            padding=padding)
+                # Apply the padding to the lowres
+                padded_lowres = kom.volume.pad(lowres, padding)
 
                 # Check the extract features have the correct shape and dtype
-                self.assertEqual(chunk_lowres.dtype, lowres.dtype)
-                self.assertEqual(chunk_lowres.ndim, lowres.ndim)
-                self.assertTrue(np.allclose(chunk_lowres.shape, [
+                self.assertEqual(padded_lowres.dtype, lowres.dtype)
+                self.assertEqual(padded_lowres.ndim, lowres.ndim)
+                self.assertTrue(np.allclose(padded_lowres.shape, [
                     lowres.shape[0],
-                    (min(lowres.shape[1], z + chunk) - z) + (padding * 2),
-                    (min(lowres.shape[2], y + chunk) - y) + (padding * 2),
-                    (min(lowres.shape[3], x + chunk) - x) + (padding * 2),
+                    lowres.shape[1] + (padding*2),
+                    lowres.shape[2] + (padding*2),
+                    lowres.shape[3] + (padding*2),
                     *lowres.shape[4:]
                 ]))

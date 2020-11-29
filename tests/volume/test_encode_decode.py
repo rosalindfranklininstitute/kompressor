@@ -275,19 +275,17 @@ class VolumeEncodeDecodeTest(unittest.TestCase):
                 self.assertEqual(reconstructed_highres.ndim, highres.ndim)
                 self.assertTrue(np.allclose(reconstructed_highres, highres))
 
-    def test_encode_decode_chunks(self):
+    def test_encode_chunks(self):
         """
-        Test we can do an encode + decode cycle on an volume processing the input in chunks and with different paddings.
+        Test we can encode a volume processing the input in chunks and with different paddings.
         """
 
-        for encode_chunk, decode_chunk, padding in product([3, 10], [3, 10], range(2)):
-            with self.subTest(encode_chunk=encode_chunk, decode_chunk=decode_chunk, padding=padding):
+        for encode_chunk, padding in product([4, 5, 11], range(4)):
+            with self.subTest(encode_chunk=encode_chunk, padding=padding):
 
                 # Make logging functions for this test
                 encode_progress_fn = partial(tqdm, desc=f'kom.volume.encode_chunks '
                                                         f'encode_chunk={encode_chunk}, padding={padding}')
-                decode_progress_fn = partial(tqdm, desc=f'kom.volume.decode_chunks '
-                                                        f'decode_chunk={decode_chunk}, padding={padding}')
 
                 # Make a prediction function for this test
                 predictions_fn = self.dummy_predictions_fn(padding=padding)
@@ -342,37 +340,58 @@ class VolumeEncodeDecodeTest(unittest.TestCase):
                 self.assertTrue(np.allclose(xmap, full_xmap))
 
                 # Decode the volume in one pass
-                full_highres = kom.volume.decode(predictions_fn, decode_fn, lowres, maps, padding=padding)
+                reconstructed_highres = kom.volume.decode(predictions_fn, decode_fn, lowres, maps, padding=padding)
 
                 # Check the decoded volume is lossless
-                self.assertEqual(full_highres.dtype, highres.dtype)
-                self.assertEqual(full_highres.ndim, highres.ndim)
-                self.assertTrue(np.allclose(full_highres, highres))
+                self.assertEqual(reconstructed_highres.dtype, highres.dtype)
+                self.assertEqual(reconstructed_highres.ndim, highres.ndim)
+                self.assertTrue(np.allclose(reconstructed_highres, highres))
+
+    def test_decode_chunks(self):
+        """
+        Test we can decode a volume processing the input in chunks and with different paddings.
+        """
+
+        for decode_chunk, padding in product([4, 5, 11], range(4)):
+            with self.subTest(decode_chunk=decode_chunk, padding=padding):
+
+                # Make logging functions for this test
+                decode_progress_fn = partial(tqdm, desc=f'kom.volume.decode_chunks '
+                                                        f'decode_chunk={decode_chunk}, padding={padding}')
+
+                # Make a prediction function for this test
+                predictions_fn = self.dummy_predictions_fn(padding=padding)
+                encode_fn = kom.volume.encode_values_uint16
+                decode_fn = kom.volume.decode_values_uint16
+
+                # Get a dummy highres volume to encode + decode
+                highres = self.dummy_highres()
+
+                # Encode the entire input at once to check for consistency
+                lowres, maps = kom.volume.encode(predictions_fn, encode_fn, highres, padding=padding)
 
                 # Decode the volume in chunks
-                chunk_highres = kom.volume.decode_chunks(predictions_fn, decode_fn, lowres, maps,
-                                                         chunk=decode_chunk, padding=padding,
-                                                         progress_fn=decode_progress_fn)
+                reconstructed_highres = kom.volume.decode_chunks(predictions_fn, decode_fn, lowres, maps,
+                                                                 chunk=decode_chunk, padding=padding,
+                                                                 progress_fn=decode_progress_fn)
 
                 # Check the decoded volume is lossless
-                self.assertEqual(chunk_highres.dtype, highres.dtype)
-                self.assertEqual(chunk_highres.ndim, highres.ndim)
-                self.assertTrue(np.allclose(chunk_highres, highres))
+                self.assertEqual(reconstructed_highres.dtype, highres.dtype)
+                self.assertEqual(reconstructed_highres.ndim, highres.ndim)
+                self.assertTrue(np.allclose(reconstructed_highres, highres))
 
-    def test_encode_decode_chunks_categorical(self):
+    def test_encode_chunks_categorical(self):
         """
-        Test we can do an encode + decode cycle on an volume processing the input in chunks and with different paddings
+        Test we can encode a volume processing the input in chunks and with different paddings
         with a categorical predictions function.
         """
 
-        for encode_chunk, decode_chunk, padding in product([3, 10], [3, 10], range(2)):
-            with self.subTest(encode_chunk=encode_chunk, decode_chunk=decode_chunk, padding=padding):
+        for encode_chunk, padding in product([4, 5, 11], range(4)):
+            with self.subTest(encode_chunk=encode_chunk, padding=padding):
 
                 # Make logging functions for this test
-                encode_progress_fn = partial(tqdm, desc=f'kom.volume.encode_chunks '
+                encode_progress_fn = partial(tqdm, desc=f'kom.volume.encode_chunks_categorical '
                                                         f'encode_chunk={encode_chunk}, padding={padding}')
-                decode_progress_fn = partial(tqdm, desc=f'kom.volume.decode_chunks '
-                                                        f'decode_chunk={decode_chunk}, padding={padding}')
 
                 # Make a prediction function for this test
                 predictions_fn = self.dummy_predictions_categorical_fn(padding=padding, classes=256)
@@ -427,19 +446,43 @@ class VolumeEncodeDecodeTest(unittest.TestCase):
                 self.assertTrue(np.allclose(xmap, full_xmap))
 
                 # Decode the volume in one pass
-                full_highres = kom.volume.decode(predictions_fn, decode_fn, lowres, maps, padding=padding)
+                reconstructed_highres = kom.volume.decode(predictions_fn, decode_fn, lowres, maps, padding=padding)
 
                 # Check the decoded volume is lossless
-                self.assertEqual(full_highres.dtype, highres.dtype)
-                self.assertEqual(full_highres.ndim, highres.ndim)
-                self.assertTrue(np.allclose(full_highres, highres))
+                self.assertEqual(reconstructed_highres.dtype, highres.dtype)
+                self.assertEqual(reconstructed_highres.ndim, highres.ndim)
+                self.assertTrue(np.allclose(reconstructed_highres, highres))
+
+    def test_decode_chunks_categorical(self):
+        """
+        Test we can decode a volume processing the input in chunks and with different paddings
+        with a categorical predictions function.
+        """
+
+        for decode_chunk, padding in product([4, 5, 11], range(4)):
+            with self.subTest(decode_chunk=decode_chunk, padding=padding):
+
+                # Make logging functions for this test
+                decode_progress_fn = partial(tqdm, desc=f'kom.volume.decode_chunks_categorical '
+                                                        f'decode_chunk={decode_chunk}, padding={padding}')
+
+                # Make a prediction function for this test
+                predictions_fn = self.dummy_predictions_categorical_fn(padding=padding, classes=256)
+                encode_fn = kom.volume.encode_categorical
+                decode_fn = kom.volume.decode_categorical
+
+                # Get a dummy highres volume to encode + decode
+                highres = self.dummy_highres(max_value=256, dtype=jnp.uint8)
+
+                # Encode the entire input at once to check for consistency
+                lowres, maps = kom.volume.encode(predictions_fn, encode_fn, highres, padding=padding)
 
                 # Decode the volume in chunks
-                chunk_highres = kom.volume.decode_chunks(predictions_fn, decode_fn, lowres, maps,
+                reconstructed_highres = kom.volume.decode_chunks(predictions_fn, decode_fn, lowres, maps,
                                                          chunk=decode_chunk, padding=padding,
                                                          progress_fn=decode_progress_fn)
 
                 # Check the decoded volume is lossless
-                self.assertEqual(chunk_highres.dtype, highres.dtype)
-                self.assertEqual(chunk_highres.ndim, highres.ndim)
-                self.assertTrue(np.allclose(chunk_highres, highres))
+                self.assertEqual(reconstructed_highres.dtype, highres.dtype)
+                self.assertEqual(reconstructed_highres.ndim, highres.ndim)
+                self.assertTrue(np.allclose(reconstructed_highres, highres))
