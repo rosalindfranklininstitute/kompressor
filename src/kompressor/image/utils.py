@@ -119,29 +119,9 @@ def features_from_lowres(lowres, padding):
                       for x in range((padding*2)+2)], axis=3)
 
 
-def chunk_from_lowres(lowres, y, x, padding):
-    # Assert valid padding
-    assert padding >= 0
-
-    # Determine size of lowres input
-    lh, lw = lowres.shape[1:3]
-
-    # Extract coordinates
-    (y0, y1), (x0, x1) = y, x
-
-    # Assert chunk has valid size
-    assert (y1 - y0) >= 2
-    assert (x1 - x0) >= 2
-
-    # Calculate the amount of padding we can collect directly from the input
-    cy0, cy1 = max(0, (y0-padding)), min(lh, (y1+padding))
-    cx0, cx1 = max(0, (x0-padding)), min(lw, (x1+padding))
-
-    # Calculate how much additional padding is still needed
-    py0, py1 = (padding - (y0 - cy0)), (padding - (cy1 - y1))
-    px0, px1 = (padding - (x0 - cx0)), (padding - (cx1 - x1))
-
-    # Extract the chunk and apply the additional padding
-    spatial_padding = ((py0, py1), (px0, px1))
+@jax.partial(jax.jit, static_argnums=1)
+def pad(lowres, padding):
+    # Pad only the 2 spatial dimensions
+    spatial_padding = ((padding, padding),) * 2
     data_padding    = ((0, 0),) * len(lowres.shape[3:])
-    return jnp.pad(lowres[:, cy0:cy1, cx0:cx1], ((0, 0), *spatial_padding, *data_padding), mode='symmetric')
+    return jnp.pad(lowres, ((0, 0), *spatial_padding, *data_padding), mode='symmetric')

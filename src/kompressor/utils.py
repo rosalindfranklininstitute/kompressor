@@ -116,17 +116,40 @@ def yield_chunks(max_value, chunk):
     assert max_value > 0
 
     # Assert chunk size is valid
-    assert chunk > 1
+    assert chunk > 3
 
-    # Yield a set of chunks along one axis including boundary conditions
-    for idx in range(0, max_value, chunk):
-        # Is this the last chunk?
-        last = ((idx + chunk) < max_value)
-        # Determine if this chunk needs start or end padding
-        p0, p1 = (1 if (idx > 0) else 0), (1 if last else 0)
-        # Determine the start and end coordinates of this chunk
-        i1 = min(max_value, idx+chunk+1)
-        # Pad the start of the chunk by 1 extra pixel if it is the last and a singleton
-        i0 = max(0, idx-(0 if (last and ((i1-idx) <= 1)) else 1))
-        # Yield the chunk
-        yield (i0, i1), (p0, p1)
+    if chunk >= max_value:
+        # If we can process in a single chunk than yield that chunk with no padding
+        yield (0, max_value), (0, 0)
+
+    else:
+        # Yield a set of constant sized chunks along one axis including boundary conditions
+        for idx in range(0, max_value, (chunk-3)):
+            # Far edge of chunk, clamped against the right edge
+            i1 = min(max_value, (idx+(chunk-2)))
+
+            # Does this chunk border on the rightmost edge
+            last = (i1 == max_value)
+
+            # Near edge of chunk, constraining that every chunk must be of constant size
+            i0 = max(0, ((i1-(chunk-2)) if last else idx))
+
+            # Does this chunk border on the left most edge
+            first = (i0 == 0)
+
+            # Calculate constant width padding
+            p0 = 0 if first else (2 if last  else 1)
+            p1 = 0 if last  else (2 if first else 1)
+
+            # Assert singleton chunk was handled by the other if-branch
+            assert not (first and last)
+
+            # Assert that the total padding was length 2 to ensure constant sized chunks
+            assert (p0 + p1) == 2
+
+            # Yield the chunk and the dynamic padding
+            yield (i0, i1), (p0, p1)
+
+            # Prevent duplicating last chunk
+            if last:
+                break

@@ -24,7 +24,7 @@ from itertools import product
 import jax.numpy as jnp
 
 # Import kompressor image utilities
-from .utils import lowres_from_highres, maps_from_highres, highres_from_lowres_and_maps, chunk_from_lowres
+from .utils import lowres_from_highres, maps_from_highres, highres_from_lowres_and_maps, pad
 from ..utils import yield_chunks
 
 
@@ -44,9 +44,7 @@ def encode(predictions_fn, encode_fn, highres, padding=0):
     gt_maps = maps_from_highres(highres)
 
     # Extract the predicted values from the lowres image
-    spatial_padding = [(padding, padding)] * 2
-    data_padding    = ((0, 0),) * len(lowres.shape[3:])
-    pred_maps       = predictions_fn(jnp.pad(lowres, ((0, 0), *spatial_padding, *data_padding), mode='symmetric'))
+    pred_maps = predictions_fn(pad(lowres, padding))
 
     # Compare the predictions to the true values for the pluses
     encoded_maps = [encode_fn(*maps) for maps in zip(pred_maps, gt_maps)]
@@ -64,9 +62,7 @@ def decode(predictions_fn, decode_fn, lowres, encoded_maps, padding=0):
     assert lw >= 2
 
     # Extract the predicted values from the lowres image
-    spatial_padding = [(padding, padding)] * 2
-    data_padding    = ((0, 0),) * len(lowres.shape[3:])
-    pred_maps       = predictions_fn(jnp.pad(lowres, ((0, 0), *spatial_padding, *data_padding), mode='symmetric'))
+    pred_maps = predictions_fn(pad(lowres, padding))
 
     # Correct the predictions using the provided encoded maps
     decoded_maps = [decode_fn(*maps) for maps in zip(pred_maps, encoded_maps)]
@@ -92,6 +88,11 @@ def encode_chunks(predictions_fn, encode_fn, highres, chunk=32, padding=0, progr
     # Extract the lowres image from the highres image
     lowres = lowres_from_highres(highres)
     lh, lw = lowres.shape[1:3]
+    assert lh >= 2
+    assert lw >= 2
+
+    # Pad lowres input to allow chunk processing
+    padded_lowres = pad(lowres, padding)
 
     # Extract the plus values from the highres image
     gt_maps = maps_from_highres(highres)
@@ -106,9 +107,12 @@ def encode_chunks(predictions_fn, encode_fn, highres, chunk=32, padding=0, progr
 
     for ((y0, y1), (py0, py1)), ((x0, x1), (px0, px1)) in chunks:
 
+        # Extract the current chunk with padding and overlaps
+        chunk_lowres = padded_lowres[:, (y0-py0):(y1+py1+(padding*2)),
+                                        (x0-px0):(x1+px1+(padding*2))]
+
         # Extract the chunks predicted values from the lowres chunk
-        chunk_pred_maps = predictions_fn(chunk_from_lowres(lowres, y=((y0-py0), (y1+py1)),
-                                                                   x=((x0-px0), (x1+px1)), padding=padding))
+        chunk_pred_maps = predictions_fn(chunk_lowres)
 
         # Update each encoded maps with the values for this chunk
         for idx, (chunk_pred_map, gt_map) in enumerate(zip(chunk_pred_maps, gt_maps)):
@@ -133,6 +137,9 @@ def decode_chunks(predictions_fn, decode_fn, lowres, encoded_maps, chunk=32, pad
     assert lh >= 2
     assert lw >= 2
 
+    # Pad lowres input to allow chunk processing
+    padded_lowres = pad(lowres, padding)
+
     # Pre-allocate full decoded maps
     decoded_maps = [jnp.zeros_like(encoded_map) for encoded_map in encoded_maps]
 
@@ -143,9 +150,12 @@ def decode_chunks(predictions_fn, decode_fn, lowres, encoded_maps, chunk=32, pad
 
     for ((y0, y1), (py0, py1)), ((x0, x1), (px0, px1)) in chunks:
 
+        # Extract the current chunk with padding and overlaps
+        chunk_lowres = padded_lowres[:, (y0-py0):(y1+py1+(padding*2)),
+                                        (x0-px0):(x1+px1+(padding*2))]
+
         # Extract the chunks predicted values from the lowres chunk
-        chunk_pred_maps = predictions_fn(chunk_from_lowres(lowres, y=((y0-py0), (y1+py1)),
-                                                                   x=((x0-px0), (x1+px1)), padding=padding))
+        chunk_pred_maps = predictions_fn(chunk_lowres)
 
         # Update each encoded maps with the values for this chunk
         for idx, (chunk_pred_map, encoded_map) in enumerate(zip(chunk_pred_maps, encoded_maps)):
