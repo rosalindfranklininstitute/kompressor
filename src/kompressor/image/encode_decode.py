@@ -78,7 +78,7 @@ def encode_chunks(predictions_fn, encode_fn, highres, chunk=32, padding=0, progr
     assert padding >= 0
 
     # Assert chunk size is valid
-    assert chunk > 1
+    assert chunk > 3
 
     # Assert the input is large enough
     hh, hw = highres.shape[1:3]
@@ -130,7 +130,7 @@ def decode_chunks(predictions_fn, decode_fn, lowres, encoded_maps, chunk=32, pad
     assert padding >= 0
 
     # Assert chunk size is valid
-    assert chunk > 1
+    assert chunk > 3
 
     # Assert the input is large enough
     lh, lw = lowres.shape[1:3]
