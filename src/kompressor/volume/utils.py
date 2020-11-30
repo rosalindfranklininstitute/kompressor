@@ -23,6 +23,9 @@
 import jax
 import jax.numpy as jnp
 
+from ..utils import \
+    yield_chunks, validate_padding
+
 
 @jax.jit
 def targets_from_highres(highres):

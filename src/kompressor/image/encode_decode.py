@@ -26,9 +26,7 @@ import jax.numpy as jnp
 # Import kompressor image utilities
 from .utils import \
     lowres_from_highres, maps_from_highres, highres_from_lowres_and_maps, pad, \
-    validate_highres, validate_lowres, validate_chunk
-from ..utils import \
-    yield_chunks, validate_padding
+    validate_highres, validate_lowres, validate_chunk, validate_padding, yield_chunks
 
 
 def encode(predictions_fn, encode_fn, highres, padding=0):
