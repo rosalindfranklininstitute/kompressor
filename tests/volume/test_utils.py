@@ -344,6 +344,60 @@ class VolumeUtilsTest(unittest.TestCase):
                     *lowres.shape[4:]
                 ]))
 
+    def test_validate_highres(self):
+        """
+        Validate bad highres shapes raises exception.
+        """
+
+        with self.subTest('Input with no explicit data dimensions throws exception'):
+            self.assertRaisesRegex(Exception, '.*', kom.volume.utils.validate_highres,
+                                   self.dummy_highres(shape=(2, 3, 3, 3, 1))[..., 0])
+
+        with self.subTest('Input with degenerate dimensions throws exception'):
+            self.assertRaisesRegex(Exception, '.*', kom.volume.utils.validate_highres,
+                                   self.dummy_highres(shape=(0, 3, 3, 3, 1)))
+
+        for shape in [(0, 0, 0), (1, 1, 1), (2, 2, 2), (2, 2, 3), (2, 3, 2), (3, 2, 2)]:
+            with self.subTest('Spatial dimensions less than or equal to 2 throw exception',
+                              shape=shape):
+                self.assertRaisesRegex(Exception, '.*', kom.volume.utils.validate_highres,
+                                       self.dummy_highres(shape=(2, *shape, 3)))
+
+        for shape in [(4, 4, 4), (6, 6, 6)]:
+            with self.subTest('Spatial dimensions divisible by 2 throw exception',
+                              shape=shape):
+                self.assertRaisesRegex(Exception, '.*', kom.image.utils.validate_highres,
+                                       self.dummy_highres(shape=(2, *shape, 3)))
+
+        for shape in [(3, 3, 3), (3, 3, 5), (3, 5, 3), (5, 3, 3)]:
+            with self.subTest('Spatial dimensions greater than or equal to 3 return shape tuple',
+                              shape=shape):
+                hd, hh, hw = kom.volume.utils.validate_highres(self.dummy_highres(shape=(2, *shape, 3)))
+
+    def test_validate_lowres(self):
+        """
+        Validate bad lowres shapes raises exception.
+        """
+
+        with self.subTest('Input with no explicit data dimensions throws exception'):
+            self.assertRaisesRegex(Exception, '.*', kom.volume.utils.validate_highres,
+                                   self.dummy_highres(shape=(2, 2, 2, 2, 1))[..., 0])
+
+        with self.subTest('Input with degenerate dimensions throws exception'):
+            self.assertRaisesRegex(Exception, '.*', kom.volume.utils.validate_highres,
+                                   self.dummy_highres(shape=(0, 2, 2, 2, 1)))
+
+        for shape in [(0, 0, 0), (1, 1, 1), (1, 1, 2), (1, 2, 1), (2, 1, 1)]:
+            with self.subTest('Spatial dimensions less than or equal to 1 throw exception',
+                              shape=shape):
+                self.assertRaisesRegex(Exception, '.*', kom.volume.utils.validate_lowres,
+                                       self.dummy_highres(shape=(2, *shape, 3)))
+
+        for shape in [(2, 2, 2), (2, 2, 3), (2, 3, 2), (3, 2, 2)]:
+            with self.subTest('Spatial dimensions greater than or equal to 2 return shape tuple',
+                              shape=shape):
+                ld, lh, lw = kom.volume.utils.validate_lowres(self.dummy_highres(shape=(2, *shape, 3)))
+
     def test_validate_padding(self):
         """
         Validate that negative padding raises exception.

@@ -20,6 +20,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import numpy as np
 import jax
 import jax.numpy as jnp
 
@@ -132,6 +133,8 @@ def pad(lowres, padding):
 
 def validate_highres(highres):
     # Assert the input is large enough
+    assert highres.ndim >= 4
+    assert np.prod(highres.shape) > 0
     hh, hw = highres.shape[1:3]
     assert hh > 2 and (hh % 2) != 0
     assert hw > 2 and (hw % 2) != 0
@@ -140,6 +143,8 @@ def validate_highres(highres):
 
 def validate_lowres(lowres):
     # Assert the input is large enough
+    assert lowres.ndim >= 4
+    assert np.prod(lowres.shape) > 0
     lh, lw = lowres.shape[1:3]
     assert lh >= 2
     assert lw >= 2
