@@ -479,8 +479,8 @@ class VolumeEncodeDecodeTest(unittest.TestCase):
 
                 # Decode the volume in chunks
                 reconstructed_highres = kom.volume.decode_chunks(predictions_fn, decode_fn, lowres, maps,
-                                                         chunk=decode_chunk, padding=padding,
-                                                         progress_fn=decode_progress_fn)
+                                                                 chunk=decode_chunk, padding=padding,
+                                                                 progress_fn=decode_progress_fn)
 
                 # Check the decoded volume is lossless
                 self.assertEqual(reconstructed_highres.dtype, highres.dtype)
