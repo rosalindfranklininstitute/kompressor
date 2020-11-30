@@ -23,6 +23,7 @@
 
 # Utility imports
 import unittest
+from itertools import product
 import numpy as np
 import jax.numpy as jnp
 
@@ -252,3 +253,48 @@ class ImageUtilsTest(unittest.TestCase):
                     lowres.shape[2] + (padding*2),
                     *lowres.shape[3:]
                 ]))
+
+    def test_validate_padding(self):
+        """
+        Validate that negative padding raises exception.
+        """
+
+        for padding in [None]:
+            with self.subTest('Non int padding throws exception',
+                              padding=padding):
+                self.assertRaisesRegex(Exception, '.*', kom.image.utils.validate_padding, padding)
+
+        for padding in range(-4, 0):
+            with self.subTest('Negative padding should throw exception',
+                              padding=padding):
+                self.assertRaisesRegex(Exception, '.*', kom.image.utils.validate_padding, padding)
+
+        for padding in range(0, 4):
+            with self.subTest('Positive padding should return without error',
+                              padding=padding):
+                kom.image.utils.validate_padding(padding)
+
+    def test_validate_chunk(self):
+        """
+        Validate that invalid chunk sizes throw exceptions, and valid ones are normalized into tuples.
+        """
+
+        for chunk in [(4,), (4, 4, 4)]:
+            with self.subTest('Bad shaped tuple throws exception',
+                              chunk=chunk):
+                self.assertRaisesRegex(Exception, '.*', kom.image.utils.validate_chunk, chunk)
+
+        for chunk in [None, (None, 4), (4, None)]:
+            with self.subTest('Non int chunk throws exception',
+                              chunk=chunk):
+                self.assertRaisesRegex(Exception, '.*', kom.image.utils.validate_chunk, chunk)
+
+        for chunk in [3, (3, 4), (4, 3)]:
+            with self.subTest('Chunk less than 4 in any dimension should throw exception',
+                              chunk=chunk):
+                self.assertRaisesRegex(Exception, '.*', kom.image.utils.validate_chunk, chunk)
+
+        for chunk in [4, 5, (4, 4), (4, 5), (5, 4)]:
+            with self.subTest('Chunk greater than or equal to 4 in all dimensions should return a tuple of chunk sizes',
+                              chunk=chunk):
+                ch, cw = kom.image.utils.validate_chunk(chunk)
