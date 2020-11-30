@@ -157,4 +157,5 @@ def yield_chunks(max_value, chunk):
 
 def validate_padding(padding):
     # Assert valid padding
+    assert isinstance(padding, int)
     assert padding >= 0
