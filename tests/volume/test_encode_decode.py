@@ -280,7 +280,8 @@ class VolumeEncodeDecodeTest(unittest.TestCase):
         Test we can encode a volume processing the input in chunks and with different paddings.
         """
 
-        for encode_chunk, padding in product([6, 11], range(4)):
+        for encode_chunk, padding in product([6, 11, (6, 6, 11), (6, 11, 6), (11, 6, 6),
+                                                     (6, 11, 11), (11, 11, 6), (11, 6, 11)], range(4)):
             with self.subTest(encode_chunk=encode_chunk, padding=padding):
 
                 # Make logging functions for this test
@@ -352,7 +353,8 @@ class VolumeEncodeDecodeTest(unittest.TestCase):
         Test we can decode a volume processing the input in chunks and with different paddings.
         """
 
-        for decode_chunk, padding in product([6, 11], range(4)):
+        for decode_chunk, padding in product([6, 11, (6, 6, 11), (6, 11, 6), (11, 6, 6),
+                                                     (6, 11, 11), (11, 11, 6), (11, 6, 11)], range(4)):
             with self.subTest(decode_chunk=decode_chunk, padding=padding):
 
                 # Make logging functions for this test
@@ -386,7 +388,8 @@ class VolumeEncodeDecodeTest(unittest.TestCase):
         with a categorical predictions function.
         """
 
-        for encode_chunk, padding in product([6, 11], range(4)):
+        for encode_chunk, padding in product([6, 11, (6, 6, 11), (6, 11, 6), (11, 6, 6),
+                                                     (6, 11, 11), (11, 11, 6), (11, 6, 11)], range(4)):
             with self.subTest(encode_chunk=encode_chunk, padding=padding):
 
                 # Make logging functions for this test
@@ -459,7 +462,8 @@ class VolumeEncodeDecodeTest(unittest.TestCase):
         with a categorical predictions function.
         """
 
-        for decode_chunk, padding in product([6, 11], range(4)):
+        for decode_chunk, padding in product([6, 11, (6, 6, 11), (6, 11, 6), (11, 6, 6),
+                                                     (6, 11, 11), (11, 11, 6), (11, 6, 11)], range(4)):
             with self.subTest(decode_chunk=decode_chunk, padding=padding):
 
                 # Make logging functions for this test
