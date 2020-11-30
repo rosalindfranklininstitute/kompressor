@@ -130,9 +130,6 @@ def encode_chunks(predictions_fn, encode_fn, highres, chunk=32, padding=0, progr
 
 
 def decode_chunks(predictions_fn, decode_fn, lowres, encoded_maps, chunk=32, padding=0, progress_fn=None):
-    # Assert valid padding
-    validate_padding(padding)
-
     # Compute decoded maps in chunks
     decoded_maps = process_chunks(predictions_fn, decode_fn, lowres, encoded_maps,
                                   chunk=chunk, padding=padding, progress_fn=progress_fn)
