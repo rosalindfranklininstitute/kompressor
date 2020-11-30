@@ -153,3 +153,8 @@ def yield_chunks(max_value, chunk):
             # Prevent duplicating last chunk
             if last:
                 break
+
+
+def validate_padding(padding):
+    # Assert valid padding
+    assert padding >= 0

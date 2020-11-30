@@ -24,21 +24,23 @@ from itertools import product
 import jax.numpy as jnp
 
 # Import kompressor image utilities
-from .utils import lowres_from_highres, maps_from_highres, highres_from_lowres_and_maps, pad
-from ..utils import yield_chunks
+from .utils import \
+    lowres_from_highres, maps_from_highres, highres_from_lowres_and_maps, pad, \
+    validate_highres, validate_lowres, validate_chunk
+from ..utils import \
+    yield_chunks, validate_padding
 
 
 def encode(predictions_fn, encode_fn, highres, padding=0):
     # Assert valid padding
-    assert padding >= 0
+    validate_padding(padding)
 
     # Assert the input is large enough
-    hh, hw = highres.shape[1:3]
-    assert hh > 2 and (hh % 2) != 0
-    assert hw > 2 and (hw % 2) != 0
+    validate_highres(highres)
 
     # Extract the lowres image from the highres image
     lowres = lowres_from_highres(highres)
+    validate_lowres(lowres)
 
     # Extract the plus values from the highres image
     gt_maps = maps_from_highres(highres)
@@ -54,12 +56,10 @@ def encode(predictions_fn, encode_fn, highres, padding=0):
 
 def decode(predictions_fn, decode_fn, lowres, encoded_maps, padding=0):
     # Assert valid padding
-    assert padding >= 0
+    validate_padding(padding)
 
     # Assert the input is large enough
-    lh, lw = lowres.shape[1:3]
-    assert lh >= 2
-    assert lw >= 2
+    validate_lowres(lowres)
 
     # Extract the predicted values from the lowres image
     pred_maps = predictions_fn(pad(lowres, padding))
@@ -75,21 +75,17 @@ def decode(predictions_fn, decode_fn, lowres, encoded_maps, padding=0):
 
 def encode_chunks(predictions_fn, encode_fn, highres, chunk=32, padding=0, progress_fn=None):
     # Assert valid padding
-    assert padding >= 0
+    validate_padding(padding)
 
     # Assert chunk size is valid
-    assert chunk > 3
+    ch, cw = validate_chunk(chunk)
 
     # Assert the input is large enough
-    hh, hw = highres.shape[1:3]
-    assert hh > 2 and (hh % 2) != 0
-    assert hw > 2 and (hw % 2) != 0
+    validate_highres(highres)
 
     # Extract the lowres image from the highres image
     lowres = lowres_from_highres(highres)
-    lh, lw = lowres.shape[1:3]
-    assert lh >= 2
-    assert lw >= 2
+    lh, lw = validate_lowres(lowres)
 
     # Pad lowres input to allow chunk processing
     padded_lowres = pad(lowres, padding)
@@ -100,7 +96,7 @@ def encode_chunks(predictions_fn, encode_fn, highres, chunk=32, padding=0, progr
     # Pre-allocate full encoded maps
     encoded_maps = [jnp.zeros_like(gt_map) for gt_map in gt_maps]
 
-    chunks = product(yield_chunks(lh, chunk), yield_chunks(lw, chunk))
+    chunks = product(yield_chunks(lh, ch), yield_chunks(lw, cw))
     if progress_fn is not None:
         # If a progress callback was given wrap the list of chunks
         chunks = progress_fn(list(chunks))
@@ -127,15 +123,13 @@ def encode_chunks(predictions_fn, encode_fn, highres, chunk=32, padding=0, progr
 
 def decode_chunks(predictions_fn, decode_fn, lowres, encoded_maps, chunk=32, padding=0, progress_fn=None):
     # Assert valid padding
-    assert padding >= 0
+    validate_padding(padding)
 
     # Assert chunk size is valid
-    assert chunk > 3
+    ch, cw = validate_chunk(chunk)
 
     # Assert the input is large enough
-    lh, lw = lowres.shape[1:3]
-    assert lh >= 2
-    assert lw >= 2
+    lh, lw = validate_lowres(lowres)
 
     # Pad lowres input to allow chunk processing
     padded_lowres = pad(lowres, padding)
@@ -143,7 +137,7 @@ def decode_chunks(predictions_fn, decode_fn, lowres, encoded_maps, chunk=32, pad
     # Pre-allocate full decoded maps
     decoded_maps = [jnp.zeros_like(encoded_map) for encoded_map in encoded_maps]
 
-    chunks = product(yield_chunks(lh, chunk), yield_chunks(lw, chunk))
+    chunks = product(yield_chunks(lh, ch), yield_chunks(lw, cw))
     if progress_fn is not None:
         # If a progress callback was given wrap the list of chunks
         chunks = progress_fn(list(chunks))

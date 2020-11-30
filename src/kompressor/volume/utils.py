@@ -206,3 +206,36 @@ def pad(lowres, padding):
     spatial_padding = ((padding, padding),) * 3
     data_padding    = ((0, 0),) * len(lowres.shape[4:])
     return jnp.pad(lowres, ((0, 0), *spatial_padding, *data_padding), mode='symmetric')
+
+
+def validate_highres(highres):
+    # Assert the input is large enough
+    hd, hh, hw = highres.shape[1:4]
+    assert hd > 2 and (hd % 2) != 0
+    assert hh > 2 and (hh % 2) != 0
+    assert hw > 2 and (hw % 2) != 0
+    return hd, hh, hw
+
+
+def validate_lowres(lowres):
+    # Assert the input is large enough
+    ld, lh, lw = lowres.shape[1:4]
+    assert ld >= 2
+    assert lh >= 2
+    assert lw >= 2
+    return ld, lh, lw
+
+
+def validate_chunk(chunk):
+    # Assert valid chunk size
+    if isinstance(chunk, int):
+        assert chunk > 3
+        cd, ch, cw = (chunk,) * 3
+    elif isinstance(chunk, tuple):
+        cd, ch, cw = chunk
+        assert cd > 3
+        assert ch > 3
+        assert cw > 3
+    else:
+        raise AssertionError('chunk must be int or tuple(int, int, int)')
+    return cd, ch, cw
