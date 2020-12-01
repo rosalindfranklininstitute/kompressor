@@ -32,7 +32,7 @@ from .utils import \
     targets_from_highres, lowres_from_highres, \
     maps_from_predictions, maps_from_highres, \
     highres_from_lowres_and_maps, \
-    features_from_lowres, pad
+    features_from_lowres, pad_neighborhood
 
 # Import the 3D image encode decode functions
 from .encode_decode import \

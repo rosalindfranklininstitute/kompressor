@@ -39,7 +39,7 @@ class ImageUtilsTest(unittest.TestCase):
 
     def test_targets_from_highres(self):
         """
-        Test extracting [B, H, W, 5, ...] training targets from the highres images.
+        Test extracting training targets from the highres images.
         """
 
         # Get a dummy highres image to extract targets from
@@ -82,7 +82,7 @@ class ImageUtilsTest(unittest.TestCase):
 
     def test_maps_from_predictions(self):
         """
-        Test extracting the LR, UD, and C maps from the prediction tensor, merging duplicates.
+        Test extracting the maps from the prediction tensor, merging duplicates.
         """
 
         # Get a dummy highres image to extract the maps from
@@ -124,7 +124,7 @@ class ImageUtilsTest(unittest.TestCase):
 
     def test_maps_from_highres(self):
         """
-        Test extracting the LR, UD, and C maps directly from the highres inputs to use as the
+        Test extracting the maps directly from the highres inputs to use as the
         ground truths for encoding.
         """
 
@@ -204,7 +204,7 @@ class ImageUtilsTest(unittest.TestCase):
 
     def test_features_from_lowres(self):
         """
-        Test we can extract a [B, H, W, N, ...] tensor of neighbor features from a lowres.
+        Test we can extract a tensor of neighbor features from a lowres.
         """
 
         for padding in range(4):
@@ -230,7 +230,7 @@ class ImageUtilsTest(unittest.TestCase):
                     *lowres.shape[3:]
                 ]))
 
-    def test_pad(self):
+    def test_pad_neighborhood(self):
         """
         Test we can pad a lowres image.
         """
@@ -242,7 +242,7 @@ class ImageUtilsTest(unittest.TestCase):
                 lowres  = kom.image.lowres_from_highres(self.dummy_highres())
 
                 # Apply the padding to the lowres
-                padded_lowres = kom.image.pad(lowres, padding)
+                padded_lowres = kom.image.pad_neighborhood(lowres, padding)
 
                 # Check the extract features have the correct shape and dtype
                 self.assertEqual(padded_lowres.dtype, lowres.dtype)

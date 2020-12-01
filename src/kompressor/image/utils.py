@@ -28,6 +28,11 @@ from ..utils import \
     yield_chunks, validate_padding
 
 
+########################################################################################################################
+# Public API functions used for building compression models
+########################################################################################################################
+
+
 @jax.jit
 def targets_from_highres(highres):
     # Slice out each value of the pluses
@@ -124,11 +129,74 @@ def features_from_lowres(lowres, padding):
 
 
 @jax.partial(jax.jit, static_argnums=1)
-def pad(lowres, padding):
+def pad_neighborhood(lowres, padding):
     # Pad only the 2 spatial dimensions
     spatial_padding = ((padding, padding),) * 2
     data_padding    = ((0, 0),) * len(lowres.shape[3:])
     return jnp.pad(lowres, ((0, 0), *spatial_padding, *data_padding), mode='symmetric')
+
+
+########################################################################################################################
+# Padding and trim functions for handling inputs with even dimension sizes
+########################################################################################################################
+
+
+@jax.jit
+def pad_highres(highres):
+    # Determine the size of the input and the padding to apply
+    hh, hw = highres.shape[1:3]
+    ph, pw = (hh + 1) % 2, (hw + 1) % 2
+
+    # Pad highres using reflect to match lowres padded with symmetric
+    data_padding = ((0, 0),) * len(highres.shape[3:])
+    padded_highres = jnp.pad(highres, ((0, 0), (0, ph), (0, pw), *data_padding), mode='reflect')
+
+    # Return the padded highres and the padding values
+    return padded_highres, (ph, pw)
+
+
+@jax.partial(jax.jit, static_argnums=1)
+def pad_lowres(lowres, padding):
+    # Pad lowres using symmetric to match lowres padded with reflect
+    ph, pw = padding
+    data_padding = ((0, 0),) * len(lowres.shape[3:])
+    return jnp.pad(lowres, ((0, 0), (0, ph), (0, pw), *data_padding), mode='symmetric')
+
+
+@jax.partial(jax.jit, static_argnums=1)
+def pad_map(inputs, padding):
+    # Pad map using reflect to match lowres padded with symmetric
+    ph, pw = padding
+    data_padding = ((0, 0),) * len(inputs.shape[3:])
+    return jnp.pad(inputs, ((0, 0), (0, ph), (0, pw), *data_padding), mode='symmetric')
+
+
+def pad_maps(maps, padding):
+    # Unpack the maps and the padding
+    lrmap, udmap, cmap = maps
+    ph, pw = padding
+    # Pad maps based on even padding
+    return pad_map(lrmap, (0, pw)), pad_map(udmap, (ph, 0)), cmap
+
+
+def trim(inputs, padding):
+    # Determine the size of the input and the padding to remove
+    h, w = inputs.shape[1:3]
+    ph, pw = padding
+    return inputs[:, :(h-ph), :(w-pw)]
+
+
+def trim_maps(maps, padding):
+    # Unpack the maps and the padding
+    lrmap, udmap, cmap = maps
+    ph, pw = padding
+    # Trim maps based on even padding
+    return trim(lrmap, (0, pw)), trim(udmap, (ph, 0)), cmap
+
+
+########################################################################################################################
+# Validation functions
+########################################################################################################################
 
 
 def validate_highres(highres):

@@ -79,8 +79,9 @@ class VolumeEncodeDecodeTest(unittest.TestCase):
         Test we can do an encode + decode cycle on an volume processing the whole input at once using different paddings.
         """
 
-        for padding in range(4):
-            with self.subTest(padding=padding):
+        for padding in range(2):
+            with self.subTest('Test with odd dimensions',
+                              padding=padding):
 
                 # Make a prediction function for this test
                 predictions_fn = self.dummy_predictions_fn(padding=padding)
@@ -91,7 +92,14 @@ class VolumeEncodeDecodeTest(unittest.TestCase):
                 highres = self.dummy_highres()
 
                 # Encode the entire volume at once
-                lowres, maps = kom.volume.encode(predictions_fn, encode_fn, highres, padding=padding)
+                lowres, maps, dims = kom.volume.encode(predictions_fn, encode_fn, highres,
+                                                       padding=padding)
+
+                # Check that even padding was applied correctly
+                ed, eh, ew = dims
+                self.assertEqual(ed, 0)
+                self.assertEqual(eh, 0)
+                self.assertEqual(ew, 0)
 
                 # Check that the lowres and maps are the correct sizes and dtypes
                 lrmap, udmap, fbmap, cmap, zmap, ymap, xmap = maps
@@ -167,7 +175,39 @@ class VolumeEncodeDecodeTest(unittest.TestCase):
                 ]))
 
                 # Decode the entire volume at once
-                reconstructed_highres = kom.volume.decode(predictions_fn, decode_fn, lowres, maps, padding=padding)
+                reconstructed_highres = kom.volume.decode(predictions_fn, decode_fn, lowres, maps, dims, 
+                                                          padding=padding)
+
+                # Check the decoded volume is lossless
+                self.assertEqual(reconstructed_highres.dtype, highres.dtype)
+                self.assertEqual(reconstructed_highres.ndim, highres.ndim)
+                self.assertTrue(np.allclose(reconstructed_highres, highres))
+                
+        for shape, padding in product([(16, 16, 16), (16, 16, 17), (16, 17, 16), (17, 16, 16)], range(2)):
+            with self.subTest('Test with even dimensions',
+                              shape=shape, padding=padding):
+
+                # Make a prediction function for this test
+                predictions_fn = self.dummy_predictions_fn(padding=padding)
+                encode_fn = kom.volume.encode_values_uint16
+                decode_fn = kom.volume.decode_values_uint16
+
+                # Get a dummy highres volume to encode + decode
+                highres = self.dummy_highres(shape=(2, *shape, 1))
+
+                # Encode the entire volume at once
+                lowres, maps, dims = kom.volume.encode(predictions_fn, encode_fn, highres,
+                                                       padding=padding)
+
+                # Check that even padding was applied correctly
+                ed, eh, ew = dims
+                self.assertEqual(ed, (shape[0] + 1) % 2)
+                self.assertEqual(eh, (shape[1] + 1) % 2)
+                self.assertEqual(ew, (shape[2] + 1) % 2)
+
+                # Decode the entire volume at once
+                reconstructed_highres = kom.volume.decode(predictions_fn, decode_fn, lowres, maps, dims,
+                                                          padding=padding)
 
                 # Check the decoded volume is lossless
                 self.assertEqual(reconstructed_highres.dtype, highres.dtype)
@@ -180,8 +220,9 @@ class VolumeEncodeDecodeTest(unittest.TestCase):
         paddings using a categorical predictor and encoding.
         """
 
-        for padding in range(4):
-            with self.subTest(padding=padding):
+        for padding in range(2):
+            with self.subTest('Test with odd dimensions',
+                              padding=padding):
 
                 # Make a prediction function for this test
                 predictions_fn = self.dummy_predictions_categorical_fn(padding=padding, classes=256)
@@ -192,7 +233,14 @@ class VolumeEncodeDecodeTest(unittest.TestCase):
                 highres = self.dummy_highres(max_value=256, dtype=jnp.uint8)
 
                 # Encode the entire volume at once
-                lowres, maps = kom.volume.encode(predictions_fn, encode_fn, highres, padding=padding)
+                lowres, maps, dims = kom.volume.encode(predictions_fn, encode_fn, highres, 
+                                                       padding=padding)
+
+                # Check that even padding was applied correctly
+                ed, eh, ew = dims
+                self.assertEqual(ed, 0)
+                self.assertEqual(eh, 0)
+                self.assertEqual(ew, 0)
 
                 # Check that the lowres and maps are the correct sizes and dtypes
                 lrmap, udmap, fbmap, cmap, zmap, ymap, xmap = maps
@@ -268,7 +316,39 @@ class VolumeEncodeDecodeTest(unittest.TestCase):
                 ]))
 
                 # Decode the entire volume at once
-                reconstructed_highres = kom.volume.decode(predictions_fn, decode_fn, lowres, maps, padding=padding)
+                reconstructed_highres = kom.volume.decode(predictions_fn, decode_fn, lowres, maps, dims, 
+                                                          padding=padding)
+
+                # Check the decoded volume is lossless
+                self.assertEqual(reconstructed_highres.dtype, highres.dtype)
+                self.assertEqual(reconstructed_highres.ndim, highres.ndim)
+                self.assertTrue(np.allclose(reconstructed_highres, highres))
+                
+        for shape, padding in product([(16, 16, 16), (16, 16, 17), (16, 17, 16), (17, 16, 16)], range(2)):
+            with self.subTest('Test with even dimensions',
+                              shape=shape, padding=padding):
+
+                # Make a prediction function for this test
+                predictions_fn = self.dummy_predictions_categorical_fn(padding=padding, classes=256)
+                encode_fn = kom.volume.encode_categorical
+                decode_fn = kom.volume.decode_categorical
+
+                # Get a dummy highres volume to encode + decode
+                highres = self.dummy_highres(shape=(2, *shape, 1), max_value=256, dtype=jnp.uint8)
+
+                # Encode the entire volume at once
+                lowres, maps, dims = kom.volume.encode(predictions_fn, encode_fn, highres,
+                                                       padding=padding)
+
+                # Check that even padding was applied correctly
+                ed, eh, ew = dims
+                self.assertEqual(ed, (shape[0] + 1) % 2)
+                self.assertEqual(eh, (shape[1] + 1) % 2)
+                self.assertEqual(ew, (shape[2] + 1) % 2)
+
+                # Decode the entire volume at once
+                reconstructed_highres = kom.volume.decode(predictions_fn, decode_fn, lowres, maps, dims,
+                                                          padding=padding)
 
                 # Check the decoded volume is lossless
                 self.assertEqual(reconstructed_highres.dtype, highres.dtype)
@@ -280,9 +360,9 @@ class VolumeEncodeDecodeTest(unittest.TestCase):
         Test we can encode a volume processing the input in chunks and with different paddings.
         """
 
-        for encode_chunk, padding in product([6, 11, (6, 6, 11), (6, 11, 6), (11, 6, 6),
-                                                     (6, 11, 11), (11, 11, 6), (11, 6, 11)], range(4)):
-            with self.subTest(encode_chunk=encode_chunk, padding=padding):
+        for encode_chunk, padding in product([6, 11, (6, 11, 11), (11, 11, 6), (11, 6, 11)], range(2)):
+            with self.subTest('Test with odd dimensions',
+                              encode_chunk=encode_chunk, padding=padding):
 
                 # Make logging functions for this test
                 encode_progress_fn = partial(tqdm, desc=f'kom.volume.encode_chunks '
@@ -297,13 +377,23 @@ class VolumeEncodeDecodeTest(unittest.TestCase):
                 highres = self.dummy_highres()
 
                 # Encode the entire input at once to check for consistency
-                full_lowres, full_maps = kom.volume.encode(predictions_fn, encode_fn, highres, padding=padding)
+                full_lowres, full_maps, full_dims = kom.volume.encode(predictions_fn, encode_fn, highres, 
+                                                                      padding=padding)
                 full_lrmap, full_udmap, full_fbmap, full_cmap, full_zmap, full_ymap, full_xmap = full_maps
 
                 # Encode the input in chunks
-                lowres, maps = kom.volume.encode_chunks(predictions_fn, encode_fn, highres,
-                                                        chunk=encode_chunk, padding=padding,
-                                                        progress_fn=encode_progress_fn)
+                lowres, maps, dims = kom.volume.encode_chunks(predictions_fn, encode_fn, highres,
+                                                              chunk=encode_chunk, padding=padding,
+                                                              progress_fn=encode_progress_fn)
+
+                # Check that even padding was applied correctly
+                (ed, eh, ew), (full_ed, full_eh, full_ew) = dims, full_dims
+                self.assertEqual(ed, 0)
+                self.assertEqual(eh, 0)
+                self.assertEqual(ew, 0)
+                self.assertEqual(ed, full_ed)
+                self.assertEqual(eh, full_eh)
+                self.assertEqual(ew, full_ew)
 
                 # Check that processing in chunks gives the same results as processing all at once
                 lrmap, udmap, fbmap, cmap, zmap, ymap, xmap = maps
@@ -341,7 +431,49 @@ class VolumeEncodeDecodeTest(unittest.TestCase):
                 self.assertTrue(np.allclose(xmap, full_xmap))
 
                 # Decode the volume in one pass
-                reconstructed_highres = kom.volume.decode(predictions_fn, decode_fn, lowres, maps, padding=padding)
+                reconstructed_highres = kom.volume.decode(predictions_fn, decode_fn, lowres, maps, dims, 
+                                                          padding=padding)
+
+                # Check the decoded volume is lossless
+                self.assertEqual(reconstructed_highres.dtype, highres.dtype)
+                self.assertEqual(reconstructed_highres.ndim, highres.ndim)
+                self.assertTrue(np.allclose(reconstructed_highres, highres))
+                
+        for shape, encode_chunk, padding in product([(16, 16, 16), (16, 16, 17), (16, 17, 16), (17, 16, 16)], 
+                                                    [6, 11], range(2)):
+            with self.subTest('Test with even dimensions',
+                              shape=shape, encode_chunk=encode_chunk, padding=padding):
+
+                # Make logging functions for this test
+                encode_progress_fn = partial(tqdm, desc=f'kom.volume.encode_chunks '
+                                                        f'encode_chunk={encode_chunk}, padding={padding}')
+
+                # Make a prediction function for this test
+                predictions_fn = self.dummy_predictions_fn(padding=padding)
+                encode_fn = kom.volume.encode_values_uint16
+                decode_fn = kom.volume.decode_values_uint16
+
+                # Get a dummy highres volume to encode + decode
+                highres = self.dummy_highres(shape=(2, *shape, 1))
+
+                # Encode the entire input at once to check for consistency
+                full_lowres, full_maps, full_dims = kom.volume.encode(predictions_fn, encode_fn, highres,
+                                                                      padding=padding)
+
+                # Encode the input in chunks
+                lowres, maps, dims = kom.volume.encode_chunks(predictions_fn, encode_fn, highres,
+                                                              chunk=encode_chunk, padding=padding,
+                                                              progress_fn=encode_progress_fn)
+
+                # Check that even padding was applied correctly
+                (ed, eh, ew), (full_ed, full_eh, full_ew) = dims, full_dims
+                self.assertEqual(ed, full_ed)
+                self.assertEqual(eh, full_eh)
+                self.assertEqual(ew, full_ew)
+
+                # Decode the volume in one pass
+                reconstructed_highres = kom.volume.decode(predictions_fn, decode_fn, lowres, maps, dims,
+                                                          padding=padding)
 
                 # Check the decoded volume is lossless
                 self.assertEqual(reconstructed_highres.dtype, highres.dtype)
@@ -353,9 +485,9 @@ class VolumeEncodeDecodeTest(unittest.TestCase):
         Test we can decode a volume processing the input in chunks and with different paddings.
         """
 
-        for decode_chunk, padding in product([6, 11, (6, 6, 11), (6, 11, 6), (11, 6, 6),
-                                                     (6, 11, 11), (11, 11, 6), (11, 6, 11)], range(4)):
-            with self.subTest(decode_chunk=decode_chunk, padding=padding):
+        for decode_chunk, padding in product([6, 11, (6, 11, 11), (11, 11, 6), (11, 6, 11)], range(2)):
+            with self.subTest('Test with odd dimensions',
+                              decode_chunk=decode_chunk, padding=padding):
 
                 # Make logging functions for this test
                 decode_progress_fn = partial(tqdm, desc=f'kom.volume.decode_chunks '
@@ -370,10 +502,41 @@ class VolumeEncodeDecodeTest(unittest.TestCase):
                 highres = self.dummy_highres()
 
                 # Encode the entire input at once to check for consistency
-                lowres, maps = kom.volume.encode(predictions_fn, encode_fn, highres, padding=padding)
+                lowres, maps, dims = kom.volume.encode(predictions_fn, encode_fn, highres, padding=padding)
 
                 # Decode the volume in chunks
-                reconstructed_highres = kom.volume.decode_chunks(predictions_fn, decode_fn, lowres, maps,
+                reconstructed_highres = kom.volume.decode_chunks(predictions_fn, decode_fn, lowres, maps, dims,
+                                                                 chunk=decode_chunk, padding=padding,
+                                                                 progress_fn=decode_progress_fn)
+
+                # Check the decoded volume is lossless
+                self.assertEqual(reconstructed_highres.dtype, highres.dtype)
+                self.assertEqual(reconstructed_highres.ndim, highres.ndim)
+                self.assertTrue(np.allclose(reconstructed_highres, highres))
+                
+        for shape, decode_chunk, padding in product([(16, 16, 16), (16, 16, 17), (16, 17, 16), (17, 16, 16)], 
+                                                    [6, 11], range(2)):
+            with self.subTest('Test with even dimensions',
+                              shape=shape, decode_chunk=decode_chunk, padding=padding):
+
+                # Make logging functions for this test
+                decode_progress_fn = partial(tqdm, desc=f'kom.volume.decode_chunks '
+                                                        f'decode_chunk={decode_chunk}, padding={padding}')
+
+                # Make a prediction function for this test
+                predictions_fn = self.dummy_predictions_fn(padding=padding)
+                encode_fn = kom.volume.encode_values_uint16
+                decode_fn = kom.volume.decode_values_uint16
+
+                # Get a dummy highres volume to encode + decode
+                highres = self.dummy_highres(shape=(2, *shape, 1))
+
+                # Encode the entire input at once to check for consistency
+                lowres, maps, dims = kom.volume.encode(predictions_fn, encode_fn, highres,
+                                                       padding=padding)
+
+                # Decode the volume in chunks
+                reconstructed_highres = kom.volume.decode_chunks(predictions_fn, decode_fn, lowres, maps, dims,
                                                                  chunk=decode_chunk, padding=padding,
                                                                  progress_fn=decode_progress_fn)
 
@@ -388,9 +551,9 @@ class VolumeEncodeDecodeTest(unittest.TestCase):
         with a categorical predictions function.
         """
 
-        for encode_chunk, padding in product([6, 11, (6, 6, 11), (6, 11, 6), (11, 6, 6),
-                                                     (6, 11, 11), (11, 11, 6), (11, 6, 11)], range(4)):
-            with self.subTest(encode_chunk=encode_chunk, padding=padding):
+        for encode_chunk, padding in product([6, 11, (6, 11, 11), (11, 11, 6), (11, 6, 11)], range(2)):
+            with self.subTest('Test with odd dimensions',
+                              encode_chunk=encode_chunk, padding=padding):
 
                 # Make logging functions for this test
                 encode_progress_fn = partial(tqdm, desc=f'kom.volume.encode_chunks_categorical '
@@ -405,13 +568,23 @@ class VolumeEncodeDecodeTest(unittest.TestCase):
                 highres = self.dummy_highres(max_value=256, dtype=jnp.uint8)
 
                 # Encode the entire input at once to check for consistency
-                full_lowres, full_maps = kom.volume.encode(predictions_fn, encode_fn, highres, padding=padding)
+                full_lowres, full_maps, full_dims = kom.volume.encode(predictions_fn, encode_fn, highres,
+                                                                      padding=padding)
                 full_lrmap, full_udmap, full_fbmap, full_cmap, full_zmap, full_ymap, full_xmap = full_maps
 
                 # Encode the input in chunks
-                lowres, maps = kom.volume.encode_chunks(predictions_fn, encode_fn, highres,
-                                                        chunk=encode_chunk, padding=padding,
-                                                        progress_fn=encode_progress_fn)
+                lowres, maps, dims = kom.volume.encode_chunks(predictions_fn, encode_fn, highres,
+                                                              chunk=encode_chunk, padding=padding,
+                                                              progress_fn=encode_progress_fn)
+
+                # Check that even padding was applied correctly
+                (ed, eh, ew), (full_ed, full_eh, full_ew) = dims, full_dims
+                self.assertEqual(ed, 0)
+                self.assertEqual(eh, 0)
+                self.assertEqual(ew, 0)
+                self.assertEqual(ed, full_ed)
+                self.assertEqual(eh, full_eh)
+                self.assertEqual(ew, full_ew)
 
                 # Check that processing in chunks gives the same results as processing all at once
                 lrmap, udmap, fbmap, cmap, zmap, ymap, xmap = maps
@@ -449,7 +622,48 @@ class VolumeEncodeDecodeTest(unittest.TestCase):
                 self.assertTrue(np.allclose(xmap, full_xmap))
 
                 # Decode the volume in one pass
-                reconstructed_highres = kom.volume.decode(predictions_fn, decode_fn, lowres, maps, padding=padding)
+                reconstructed_highres = kom.volume.decode(predictions_fn, decode_fn, lowres, maps, dims,
+                                                          padding=padding)
+
+                # Check the decoded volume is lossless
+                self.assertEqual(reconstructed_highres.dtype, highres.dtype)
+                self.assertEqual(reconstructed_highres.ndim, highres.ndim)
+                self.assertTrue(np.allclose(reconstructed_highres, highres))
+
+        for shape, encode_chunk, padding in product([(16, 16, 16), (16, 16, 17), (16, 17, 16), (17, 16, 16)],
+                                                    [6, 11], range(2)):
+            with self.subTest('Test with even dimensions',
+                              shape=shape, encode_chunk=encode_chunk, padding=padding):
+                # Make logging functions for this test
+                encode_progress_fn = partial(tqdm, desc=f'kom.volume.encode_chunks_categorical '
+                                                        f'encode_chunk={encode_chunk}, padding={padding}')
+
+                # Make a prediction function for this test
+                predictions_fn = self.dummy_predictions_categorical_fn(padding=padding, classes=256)
+                encode_fn = kom.volume.encode_categorical
+                decode_fn = kom.volume.decode_categorical
+
+                # Get a dummy highres volume to encode + decode
+                highres = self.dummy_highres(shape=(2, *shape, 1), max_value=256, dtype=jnp.uint8)
+
+                # Encode the entire input at once to check for consistency
+                full_lowres, full_maps, full_dims = kom.volume.encode(predictions_fn, encode_fn, highres,
+                                                                      padding=padding)
+
+                # Encode the input in chunks
+                lowres, maps, dims = kom.volume.encode_chunks(predictions_fn, encode_fn, highres,
+                                                              chunk=encode_chunk, padding=padding,
+                                                              progress_fn=encode_progress_fn)
+
+                # Check that even padding was applied correctly
+                (ed, eh, ew), (full_ed, full_eh, full_ew) = dims, full_dims
+                self.assertEqual(ed, full_ed)
+                self.assertEqual(eh, full_eh)
+                self.assertEqual(ew, full_ew)
+
+                # Decode the volume in one pass
+                reconstructed_highres = kom.volume.decode(predictions_fn, decode_fn, lowres, maps, dims,
+                                                          padding=padding)
 
                 # Check the decoded volume is lossless
                 self.assertEqual(reconstructed_highres.dtype, highres.dtype)
@@ -462,9 +676,9 @@ class VolumeEncodeDecodeTest(unittest.TestCase):
         with a categorical predictions function.
         """
 
-        for decode_chunk, padding in product([6, 11, (6, 6, 11), (6, 11, 6), (11, 6, 6),
-                                                     (6, 11, 11), (11, 11, 6), (11, 6, 11)], range(4)):
-            with self.subTest(decode_chunk=decode_chunk, padding=padding):
+        for decode_chunk, padding in product([6, 11, (6, 11, 11), (11, 11, 6), (11, 6, 11)], range(2)):
+            with self.subTest('Test with odd dimensions',
+                              decode_chunk=decode_chunk, padding=padding):
 
                 # Make logging functions for this test
                 decode_progress_fn = partial(tqdm, desc=f'kom.volume.decode_chunks_categorical '
@@ -479,10 +693,41 @@ class VolumeEncodeDecodeTest(unittest.TestCase):
                 highres = self.dummy_highres(max_value=256, dtype=jnp.uint8)
 
                 # Encode the entire input at once to check for consistency
-                lowres, maps = kom.volume.encode(predictions_fn, encode_fn, highres, padding=padding)
+                lowres, maps, dims = kom.volume.encode(predictions_fn, encode_fn, highres, padding=padding)
 
                 # Decode the volume in chunks
-                reconstructed_highres = kom.volume.decode_chunks(predictions_fn, decode_fn, lowres, maps,
+                reconstructed_highres = kom.volume.decode_chunks(predictions_fn, decode_fn, lowres, maps, dims,
+                                                                 chunk=decode_chunk, padding=padding,
+                                                                 progress_fn=decode_progress_fn)
+
+                # Check the decoded volume is lossless
+                self.assertEqual(reconstructed_highres.dtype, highres.dtype)
+                self.assertEqual(reconstructed_highres.ndim, highres.ndim)
+                self.assertTrue(np.allclose(reconstructed_highres, highres))
+
+        for shape, decode_chunk, padding in product([(16, 16, 16), (16, 16, 17), (16, 17, 16), (17, 16, 16)],
+                                                    [6, 11], range(2)):
+            with self.subTest('Test with even dimensions',
+                              shape=shape, decode_chunk=decode_chunk, padding=padding):
+
+                # Make logging functions for this test
+                decode_progress_fn = partial(tqdm, desc=f'kom.volume.decode_chunks_categorical '
+                                                        f'decode_chunk={decode_chunk}, padding={padding}')
+
+                # Make a prediction function for this test
+                predictions_fn = self.dummy_predictions_categorical_fn(padding=padding, classes=256)
+                encode_fn = kom.volume.encode_categorical
+                decode_fn = kom.volume.decode_categorical
+
+                # Get a dummy highres volume to encode + decode
+                highres = self.dummy_highres(shape=(2, *shape, 1), max_value=256, dtype=jnp.uint8)
+
+                # Encode the entire input at once to check for consistency
+                lowres, maps, dims = kom.volume.encode(predictions_fn, encode_fn, highres,
+                                                       padding=padding)
+
+                # Decode the volume in chunks
+                reconstructed_highres = kom.volume.decode_chunks(predictions_fn, decode_fn, lowres, maps, dims,
                                                                  chunk=decode_chunk, padding=padding,
                                                                  progress_fn=decode_progress_fn)
 

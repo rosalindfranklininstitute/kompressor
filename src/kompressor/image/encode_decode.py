@@ -25,13 +25,17 @@ import jax.numpy as jnp
 
 # Import kompressor image utilities
 from .utils import \
-    lowres_from_highres, maps_from_highres, highres_from_lowres_and_maps, pad, \
+    lowres_from_highres, maps_from_highres, highres_from_lowres_and_maps, \
+    pad_neighborhood, pad_highres, pad_lowres, trim, pad_maps, trim_maps, \
     validate_highres, validate_lowres, validate_chunk, validate_padding, yield_chunks
 
 
 def encode(predictions_fn, encode_fn, highres, padding=0):
     # Assert valid padding
     validate_padding(padding)
+
+    # If highres has even spatial dimensions pad by 1
+    highres, dims = pad_highres(highres)
 
     # Assert the input is large enough
     validate_highres(highres)
@@ -44,23 +48,32 @@ def encode(predictions_fn, encode_fn, highres, padding=0):
     gt_maps = maps_from_highres(highres)
 
     # Extract the predicted values from the lowres image
-    pred_maps = predictions_fn(pad(lowres, padding))
+    pred_maps = predictions_fn(pad_neighborhood(lowres, padding))
 
-    # Compare the predictions to the true values for the pluses
-    encoded_maps = [encode_fn(*maps) for maps in zip(pred_maps, gt_maps)]
+    # Compare the predictions to the true values for the pluses, trim the resulting maps if even padding was applied
+    encoded_maps = trim_maps([encode_fn(*maps) for maps in zip(pred_maps, gt_maps)], dims)
 
-    return lowres, encoded_maps
+    # Trim even padding off lowres if needed
+    lowres = trim(lowres, dims)
+
+    return lowres, encoded_maps, dims
 
 
-def decode(predictions_fn, decode_fn, lowres, encoded_maps, padding=0):
+def decode(predictions_fn, decode_fn, lowres, encoded_maps, dims, padding=0):
     # Assert valid padding
     validate_padding(padding)
 
     # Assert the input is large enough
     validate_lowres(lowres)
 
+    # Pad lowres using reflection if the original highres had even spatial dimensions
+    lowres = pad_lowres(lowres, dims)
+
+    # Apply even padding to encoded maps if needed
+    encoded_maps = pad_maps(encoded_maps, dims)
+
     # Extract the predicted values from the lowres image
-    pred_maps = predictions_fn(pad(lowres, padding))
+    pred_maps = predictions_fn(pad_neighborhood(lowres, padding))
 
     # Correct the predictions using the provided encoded maps
     decoded_maps = [decode_fn(*maps) for maps in zip(pred_maps, encoded_maps)]
@@ -68,7 +81,8 @@ def decode(predictions_fn, decode_fn, lowres, encoded_maps, padding=0):
     # Reconstruct highres image from the corrected true values
     highres = highres_from_lowres_and_maps(lowres, decoded_maps)
 
-    return highres
+    # Trim off even padding if needed
+    return trim(highres, dims)
 
 
 def process_chunks(predictions_fn, code_fn, lowres, reference_maps, chunk, padding, progress_fn):
@@ -82,7 +96,7 @@ def process_chunks(predictions_fn, code_fn, lowres, reference_maps, chunk, paddi
     lh, lw = validate_lowres(lowres)
 
     # Pad lowres input to allow chunk processing
-    padded_lowres = pad(lowres, padding)
+    padded_lowres = pad_neighborhood(lowres, padding)
 
     # Pre-allocate full coded maps
     coded_maps = [jnp.zeros_like(reference_map) for reference_map in reference_maps]
@@ -113,6 +127,9 @@ def process_chunks(predictions_fn, code_fn, lowres, reference_maps, chunk, paddi
 
 
 def encode_chunks(predictions_fn, encode_fn, highres, chunk=32, padding=0, progress_fn=None):
+    # If highres has even spatial dimensions pad by 1
+    highres, dims = pad_highres(highres)
+
     # Assert the input is large enough
     validate_highres(highres)
 
@@ -123,18 +140,28 @@ def encode_chunks(predictions_fn, encode_fn, highres, chunk=32, padding=0, progr
     gt_maps = maps_from_highres(highres)
 
     # Compute encoded maps in chunks
-    encoded_maps = process_chunks(predictions_fn, encode_fn, lowres, gt_maps,
-                                  chunk=chunk, padding=padding, progress_fn=progress_fn)
+    encoded_maps = trim_maps(process_chunks(predictions_fn, encode_fn, lowres, gt_maps,
+                                            chunk=chunk, padding=padding, progress_fn=progress_fn), dims)
 
-    return lowres, encoded_maps
+    # Trim even padding off lowres if needed
+    lowres = trim(lowres, dims)
+
+    return lowres, encoded_maps, dims
 
 
-def decode_chunks(predictions_fn, decode_fn, lowres, encoded_maps, chunk=32, padding=0, progress_fn=None):
+def decode_chunks(predictions_fn, decode_fn, lowres, encoded_maps, dims, chunk=32, padding=0, progress_fn=None):
+    # Pad lowres using reflection if the original highres had even spatial dimensions
+    lowres = pad_lowres(lowres, dims)
+
+    # Apply even padding to encoded maps if needed
+    encoded_maps = pad_maps(encoded_maps, dims)
+
     # Compute decoded maps in chunks
     decoded_maps = process_chunks(predictions_fn, decode_fn, lowres, encoded_maps,
                                   chunk=chunk, padding=padding, progress_fn=progress_fn)
 
-    # Reconstruct highres image from the corrected true values
+    # Reconstruct highres image from the corrected true values, trim off even padding if needed
     highres = highres_from_lowres_and_maps(lowres, decoded_maps)
 
-    return highres
+    # Trim off even padding if needed
+    return trim(highres, dims)

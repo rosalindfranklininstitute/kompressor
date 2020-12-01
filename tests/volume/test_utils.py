@@ -39,7 +39,7 @@ class VolumeUtilsTest(unittest.TestCase):
 
     def test_targets_from_highres(self):
         """
-        Test extracting [B, D, H, W, 19, ...] training targets from the highres volumes.
+        Test extracting training targets from the highres volumes.
         """
 
         # Get a dummy highres volume to extract targets from
@@ -84,7 +84,7 @@ class VolumeUtilsTest(unittest.TestCase):
 
     def test_maps_from_predictions(self):
         """
-        Test extracting the LR, UD, FB, C, Z, Y, and X maps from the prediction tensor, merging duplicates.
+        Test extracting the maps from the prediction tensor, merging duplicates.
         """
 
         # Get a dummy highres volume to extract the maps from
@@ -169,7 +169,7 @@ class VolumeUtilsTest(unittest.TestCase):
 
     def test_maps_from_highres(self):
         """
-        Test extracting the LR, UD, FB, C, Z, Y, and X maps directly from the highres inputs to use as the
+        Test extracting the maps directly from the highres inputs to use as the
         ground truths for encoding.
         """
 
@@ -292,7 +292,7 @@ class VolumeUtilsTest(unittest.TestCase):
 
     def test_features_from_lowres(self):
         """
-        Test we can extract a [B, D, H, W, N, ...] tensor of neighbor features from a lowres.
+        Test we can extract a tensor of neighbor features from a lowres.
         """
 
         for padding in range(4):
@@ -331,7 +331,7 @@ class VolumeUtilsTest(unittest.TestCase):
                 lowres  = kom.volume.lowres_from_highres(self.dummy_highres())
 
                 # Apply the padding to the lowres
-                padded_lowres = kom.volume.pad(lowres, padding)
+                padded_lowres = kom.volume.pad_neighborhood(lowres, padding)
 
                 # Check the extract features have the correct shape and dtype
                 self.assertEqual(padded_lowres.dtype, lowres.dtype)
