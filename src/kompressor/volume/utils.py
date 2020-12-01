@@ -236,7 +236,6 @@ def pad_highres(highres):
     return padded_highres, (pd, ph, pw)
 
 
-@jax.partial(jax.jit, static_argnums=1)
 def pad_lowres(lowres, padding):
     # Pad lowres using symmetric to match lowres padded with reflect
     pd, ph, pw = padding
@@ -244,7 +243,6 @@ def pad_lowres(lowres, padding):
     return jnp.pad(lowres, ((0, 0), (0, pd), (0, ph), (0, pw), *data_padding), mode='symmetric')
 
 
-@jax.partial(jax.jit, static_argnums=1)
 def pad_map(inputs, padding):
     # Pad map using reflect to match lowres padded with symmetric
     pd, ph, pw = padding
