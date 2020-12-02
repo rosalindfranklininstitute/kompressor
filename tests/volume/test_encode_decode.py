@@ -183,7 +183,7 @@ class VolumeEncodeDecodeTest(unittest.TestCase):
                 self.assertEqual(reconstructed_highres.ndim, highres.ndim)
                 self.assertTrue(np.allclose(reconstructed_highres, highres))
                 
-        for shape, padding in product([(16, 16, 16), (16, 16, 17), (16, 17, 16), (17, 16, 16)], range(2)):
+        for shape, padding in product([(16, 16, 16), (16, 16, 17)], range(2)):
             with self.subTest('Test with even dimensions',
                               shape=shape, padding=padding):
 
@@ -324,7 +324,7 @@ class VolumeEncodeDecodeTest(unittest.TestCase):
                 self.assertEqual(reconstructed_highres.ndim, highres.ndim)
                 self.assertTrue(np.allclose(reconstructed_highres, highres))
                 
-        for shape, padding in product([(16, 16, 16), (16, 16, 17), (16, 17, 16), (17, 16, 16)], range(2)):
+        for shape, padding in product([(16, 16, 16), (16, 16, 17)], range(2)):
             with self.subTest('Test with even dimensions',
                               shape=shape, padding=padding):
 
@@ -360,7 +360,7 @@ class VolumeEncodeDecodeTest(unittest.TestCase):
         Test we can encode a volume processing the input in chunks and with different paddings.
         """
 
-        for encode_chunk, padding in product([6, 11, (6, 11, 11), (11, 11, 6), (11, 6, 11)], range(2)):
+        for encode_chunk, padding in product([6, 11, (6, 11, 11)], range(2)):
             with self.subTest('Test with odd dimensions',
                               encode_chunk=encode_chunk, padding=padding):
 
@@ -439,8 +439,7 @@ class VolumeEncodeDecodeTest(unittest.TestCase):
                 self.assertEqual(reconstructed_highres.ndim, highres.ndim)
                 self.assertTrue(np.allclose(reconstructed_highres, highres))
                 
-        for shape, encode_chunk, padding in product([(16, 16, 16), (16, 16, 17), (16, 17, 16), (17, 16, 16)], 
-                                                    [6, 11], range(2)):
+        for shape, encode_chunk, padding in product([(16, 16, 16), (16, 16, 17)], [6, 11], range(2)):
             with self.subTest('Test with even dimensions',
                               shape=shape, encode_chunk=encode_chunk, padding=padding):
 
@@ -485,7 +484,7 @@ class VolumeEncodeDecodeTest(unittest.TestCase):
         Test we can decode a volume processing the input in chunks and with different paddings.
         """
 
-        for decode_chunk, padding in product([6, 11, (6, 11, 11), (11, 11, 6), (11, 6, 11)], range(2)):
+        for decode_chunk, padding in product([6, 11, (6, 11, 11)], range(2)):
             with self.subTest('Test with odd dimensions',
                               decode_chunk=decode_chunk, padding=padding):
 
@@ -514,8 +513,7 @@ class VolumeEncodeDecodeTest(unittest.TestCase):
                 self.assertEqual(reconstructed_highres.ndim, highres.ndim)
                 self.assertTrue(np.allclose(reconstructed_highres, highres))
                 
-        for shape, decode_chunk, padding in product([(16, 16, 16), (16, 16, 17), (16, 17, 16), (17, 16, 16)], 
-                                                    [6, 11], range(2)):
+        for shape, decode_chunk, padding in product([(16, 16, 16), (16, 16, 17)], [6, 11], range(2)):
             with self.subTest('Test with even dimensions',
                               shape=shape, decode_chunk=decode_chunk, padding=padding):
 
@@ -551,7 +549,7 @@ class VolumeEncodeDecodeTest(unittest.TestCase):
         with a categorical predictions function.
         """
 
-        for encode_chunk, padding in product([6, 11, (6, 11, 11), (11, 11, 6), (11, 6, 11)], range(2)):
+        for encode_chunk, padding in product([6, 11, (6, 11, 11)], range(2)):
             with self.subTest('Test with odd dimensions',
                               encode_chunk=encode_chunk, padding=padding):
 
@@ -630,8 +628,7 @@ class VolumeEncodeDecodeTest(unittest.TestCase):
                 self.assertEqual(reconstructed_highres.ndim, highres.ndim)
                 self.assertTrue(np.allclose(reconstructed_highres, highres))
 
-        for shape, encode_chunk, padding in product([(16, 16, 16), (16, 16, 17), (16, 17, 16), (17, 16, 16)],
-                                                    [6, 11], range(2)):
+        for shape, encode_chunk, padding in product([(16, 16, 16), (16, 16, 17)], [6, 11], range(2)):
             with self.subTest('Test with even dimensions',
                               shape=shape, encode_chunk=encode_chunk, padding=padding):
                 # Make logging functions for this test
@@ -676,7 +673,7 @@ class VolumeEncodeDecodeTest(unittest.TestCase):
         with a categorical predictions function.
         """
 
-        for decode_chunk, padding in product([6, 11, (6, 11, 11), (11, 11, 6), (11, 6, 11)], range(2)):
+        for decode_chunk, padding in product([6, 11, (6, 11, 11)], range(2)):
             with self.subTest('Test with odd dimensions',
                               decode_chunk=decode_chunk, padding=padding):
 
@@ -705,8 +702,7 @@ class VolumeEncodeDecodeTest(unittest.TestCase):
                 self.assertEqual(reconstructed_highres.ndim, highres.ndim)
                 self.assertTrue(np.allclose(reconstructed_highres, highres))
 
-        for shape, decode_chunk, padding in product([(16, 16, 16), (16, 16, 17), (16, 17, 16), (17, 16, 16)],
-                                                    [6, 11], range(2)):
+        for shape, decode_chunk, padding in product([(16, 16, 16), (16, 16, 17)], [6, 11], range(2)):
             with self.subTest('Test with even dimensions',
                               shape=shape, decode_chunk=decode_chunk, padding=padding):
 
