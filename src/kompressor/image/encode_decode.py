@@ -56,10 +56,13 @@ def encode(predictions_fn, encode_fn, highres, padding=0):
     # Trim even padding off lowres if needed
     lowres = trim(lowres, dims)
 
-    return lowres, encoded_maps, dims
+    return lowres, (encoded_maps, dims)
 
 
-def decode(predictions_fn, decode_fn, lowres, encoded_maps, dims, padding=0):
+def decode(predictions_fn, decode_fn, lowres, encoded, padding=0):
+    # Unpack maps and dynamic padding
+    encoded_maps, dims = encoded
+
     # Assert valid padding
     validate_padding(padding)
 
@@ -146,10 +149,13 @@ def encode_chunks(predictions_fn, encode_fn, highres, chunk=32, padding=0, progr
     # Trim even padding off lowres if needed
     lowres = trim(lowres, dims)
 
-    return lowres, encoded_maps, dims
+    return lowres, (encoded_maps, dims)
 
 
-def decode_chunks(predictions_fn, decode_fn, lowres, encoded_maps, dims, chunk=32, padding=0, progress_fn=None):
+def decode_chunks(predictions_fn, decode_fn, lowres, encoded, chunk=32, padding=0, progress_fn=None):
+    # Unpack maps and dynamic padding
+    encoded_maps, dims = encoded
+
     # Pad lowres using reflection if the original highres had even spatial dimensions
     lowres = pad_lowres(lowres, dims)
 

@@ -91,8 +91,8 @@ class ImageEncodeDecodeTest(unittest.TestCase):
                 highres = self.dummy_highres()
 
                 # Encode the entire image at once
-                lowres, maps, dims = kom.image.encode(predictions_fn, encode_fn, highres,
-                                                      padding=padding)
+                lowres, (maps, dims) = kom.image.encode(predictions_fn, encode_fn, highres,
+                                                        padding=padding)
 
                 # Check that even padding was applied correctly
                 eh, ew = dims
@@ -139,7 +139,7 @@ class ImageEncodeDecodeTest(unittest.TestCase):
                 ]))
 
                 # Decode the entire image at once
-                reconstructed_highres = kom.image.decode(predictions_fn, decode_fn, lowres, maps, dims,
+                reconstructed_highres = kom.image.decode(predictions_fn, decode_fn, lowres, (maps, dims),
                                                          padding=padding)
 
                 # Check the decoded image is lossless
@@ -160,8 +160,8 @@ class ImageEncodeDecodeTest(unittest.TestCase):
                 highres = self.dummy_highres(shape=(2, *shape, 3))
 
                 # Encode the entire image at once
-                lowres, maps, dims = kom.image.encode(predictions_fn, encode_fn, highres,
-                                                      padding=padding)
+                lowres, (maps, dims) = kom.image.encode(predictions_fn, encode_fn, highres,
+                                                        padding=padding)
 
                 # Check that even padding was applied correctly
                 eh, ew = dims
@@ -169,7 +169,7 @@ class ImageEncodeDecodeTest(unittest.TestCase):
                 self.assertEqual(ew, (shape[1] + 1) % 2)
 
                 # Decode the entire image at once
-                reconstructed_highres = kom.image.decode(predictions_fn, decode_fn, lowres, maps, dims,
+                reconstructed_highres = kom.image.decode(predictions_fn, decode_fn, lowres, (maps, dims),
                                                          padding=padding)
 
                 # Check the decoded image is lossless
@@ -196,8 +196,8 @@ class ImageEncodeDecodeTest(unittest.TestCase):
                 highres = self.dummy_highres()
 
                 # Encode the entire image at once
-                lowres, maps, dims = kom.image.encode(predictions_fn, encode_fn, highres,
-                                                      padding=padding)
+                lowres, (maps, dims) = kom.image.encode(predictions_fn, encode_fn, highres,
+                                                        padding=padding)
 
                 # Check that even padding was applied correctly
                 eh, ew = dims
@@ -244,7 +244,7 @@ class ImageEncodeDecodeTest(unittest.TestCase):
                 ]))
 
                 # Decode the entire image at once
-                reconstructed_highres = kom.image.decode(predictions_fn, decode_fn, lowres, maps, dims,
+                reconstructed_highres = kom.image.decode(predictions_fn, decode_fn, lowres, (maps, dims),
                                                          padding=padding)
 
                 # Check the decoded image is lossless
@@ -265,8 +265,8 @@ class ImageEncodeDecodeTest(unittest.TestCase):
                 highres = self.dummy_highres(shape=(2, *shape, 3))
 
                 # Encode the entire image at once
-                lowres, maps, dims = kom.image.encode(predictions_fn, encode_fn, highres,
-                                                      padding=padding)
+                lowres, (maps, dims) = kom.image.encode(predictions_fn, encode_fn, highres,
+                                                        padding=padding)
 
                 # Check that even padding was applied correctly
                 eh, ew = dims
@@ -274,7 +274,7 @@ class ImageEncodeDecodeTest(unittest.TestCase):
                 self.assertEqual(ew, (shape[1] + 1) % 2)
 
                 # Decode the entire image at once
-                reconstructed_highres = kom.image.decode(predictions_fn, decode_fn, lowres, maps, dims,
+                reconstructed_highres = kom.image.decode(predictions_fn, decode_fn, lowres, (maps, dims),
                                                          padding=padding)
 
                 # Check the decoded image is lossless
@@ -304,14 +304,14 @@ class ImageEncodeDecodeTest(unittest.TestCase):
                 highres = self.dummy_highres()
 
                 # Encode the entire input at once to check for consistency
-                full_lowres, full_maps, full_dims = kom.image.encode(predictions_fn, encode_fn, highres,
-                                                                     padding=padding)
+                full_lowres, (full_maps, full_dims) = kom.image.encode(predictions_fn, encode_fn, highres,
+                                                                       padding=padding)
                 full_lrmap, full_udmap, full_cmap = full_maps
 
                 # Encode the input in chunks
-                lowres, maps, dims = kom.image.encode_chunks(predictions_fn, encode_fn, highres,
-                                                             chunk=encode_chunk, padding=padding,
-                                                             progress_fn=encode_progress_fn)
+                lowres, (maps, dims) = kom.image.encode_chunks(predictions_fn, encode_fn, highres,
+                                                               chunk=encode_chunk, padding=padding,
+                                                               progress_fn=encode_progress_fn)
 
                 # Check that even padding was applied correctly
                 (eh, ew), (full_eh, full_ew) = dims, full_dims
@@ -340,7 +340,7 @@ class ImageEncodeDecodeTest(unittest.TestCase):
                 self.assertTrue(np.allclose(cmap, full_cmap))
 
                 # Decode the image in one pass
-                reconstructed_highres = kom.image.decode(predictions_fn, decode_fn, lowres, maps, dims,
+                reconstructed_highres = kom.image.decode(predictions_fn, decode_fn, lowres, (maps, dims),
                                                          padding=padding)
 
                 # Check the decoded image is lossless
@@ -364,13 +364,13 @@ class ImageEncodeDecodeTest(unittest.TestCase):
                 highres = self.dummy_highres(shape=(2, *shape, 3))
 
                 # Encode the entire input at once to check for consistency
-                full_lowres, full_maps, full_dims = kom.image.encode(predictions_fn, encode_fn, highres,
-                                                                     padding=padding)
+                full_lowres, (full_maps, full_dims) = kom.image.encode(predictions_fn, encode_fn, highres,
+                                                                       padding=padding)
 
                 # Encode the input in chunks
-                lowres, maps, dims = kom.image.encode_chunks(predictions_fn, encode_fn, highres,
-                                                             chunk=encode_chunk, padding=padding,
-                                                             progress_fn=encode_progress_fn)
+                lowres, (maps, dims) = kom.image.encode_chunks(predictions_fn, encode_fn, highres,
+                                                               chunk=encode_chunk, padding=padding,
+                                                               progress_fn=encode_progress_fn)
 
                 # Check that even padding was applied correctly
                 (eh, ew), (full_eh, full_ew) = dims, full_dims
@@ -378,7 +378,7 @@ class ImageEncodeDecodeTest(unittest.TestCase):
                 self.assertEqual(ew, full_ew)
 
                 # Decode the image in one pass
-                reconstructed_highres = kom.image.decode(predictions_fn, decode_fn, lowres, maps, dims,
+                reconstructed_highres = kom.image.decode(predictions_fn, decode_fn, lowres, (maps, dims),
                                                          padding=padding)
 
                 # Check the decoded image is lossless
@@ -408,11 +408,11 @@ class ImageEncodeDecodeTest(unittest.TestCase):
                 highres = self.dummy_highres()
 
                 # Encode the entire input at once to check for consistency
-                lowres, maps, dims = kom.image.encode(predictions_fn, encode_fn, highres,
-                                                      padding=padding)
+                lowres, (maps, dims) = kom.image.encode(predictions_fn, encode_fn, highres,
+                                                        padding=padding)
 
                 # Decode the image in chunks
-                reconstructed_highres = kom.image.decode_chunks(predictions_fn, decode_fn, lowres, maps, dims,
+                reconstructed_highres = kom.image.decode_chunks(predictions_fn, decode_fn, lowres, (maps, dims),
                                                                 chunk=decode_chunk, padding=padding,
                                                                 progress_fn=decode_progress_fn)
 
@@ -438,11 +438,11 @@ class ImageEncodeDecodeTest(unittest.TestCase):
                 highres = self.dummy_highres(shape=(2, *shape, 3))
 
                 # Encode the entire input at once to check for consistency
-                lowres, maps, dims = kom.image.encode(predictions_fn, encode_fn, highres,
-                                                      padding=padding)
+                lowres, (maps, dims) = kom.image.encode(predictions_fn, encode_fn, highres,
+                                                        padding=padding)
 
                 # Decode the image in chunks
-                reconstructed_highres = kom.image.decode_chunks(predictions_fn, decode_fn, lowres, maps, dims,
+                reconstructed_highres = kom.image.decode_chunks(predictions_fn, decode_fn, lowres, (maps, dims),
                                                                 chunk=decode_chunk, padding=padding,
                                                                 progress_fn=decode_progress_fn)
 
@@ -474,14 +474,14 @@ class ImageEncodeDecodeTest(unittest.TestCase):
                 highres = self.dummy_highres()
 
                 # Encode the entire input at once to check for consistency
-                full_lowres, full_maps, full_dims = kom.image.encode(predictions_fn, encode_fn, highres,
-                                                                     padding=padding)
+                full_lowres, (full_maps, full_dims) = kom.image.encode(predictions_fn, encode_fn, highres,
+                                                                       padding=padding)
                 full_lrmap, full_udmap, full_cmap = full_maps
 
                 # Encode the input in chunks
-                lowres, maps, dims = kom.image.encode_chunks(predictions_fn, encode_fn, highres,
-                                                             chunk=encode_chunk, padding=padding,
-                                                             progress_fn=encode_progress_fn)
+                lowres, (maps, dims) = kom.image.encode_chunks(predictions_fn, encode_fn, highres,
+                                                               chunk=encode_chunk, padding=padding,
+                                                               progress_fn=encode_progress_fn)
 
                 # Check that even padding was applied correctly
                 (eh, ew), (full_eh, full_ew) = dims, full_dims
@@ -510,7 +510,7 @@ class ImageEncodeDecodeTest(unittest.TestCase):
                 self.assertTrue(np.allclose(cmap, full_cmap))
 
                 # Decode the image in one pass
-                reconstructed_highres = kom.image.decode(predictions_fn, decode_fn, lowres, maps, dims,
+                reconstructed_highres = kom.image.decode(predictions_fn, decode_fn, lowres, (maps, dims),
                                                          padding=padding)
 
                 # Check the decoded image is lossless
@@ -535,13 +535,13 @@ class ImageEncodeDecodeTest(unittest.TestCase):
                 highres = self.dummy_highres(shape=(2, *shape, 3))
 
                 # Encode the entire input at once to check for consistency
-                full_lowres, full_maps, full_dims = kom.image.encode(predictions_fn, encode_fn, highres,
-                                                                     padding=padding)
+                full_lowres, (full_maps, full_dims) = kom.image.encode(predictions_fn, encode_fn, highres,
+                                                                       padding=padding)
 
                 # Encode the input in chunks
-                lowres, maps, dims = kom.image.encode_chunks(predictions_fn, encode_fn, highres,
-                                                             chunk=encode_chunk, padding=padding,
-                                                             progress_fn=encode_progress_fn)
+                lowres, (maps, dims) = kom.image.encode_chunks(predictions_fn, encode_fn, highres,
+                                                               chunk=encode_chunk, padding=padding,
+                                                               progress_fn=encode_progress_fn)
 
                 # Check that even padding was applied correctly
                 (eh, ew), (full_eh, full_ew) = dims, full_dims
@@ -549,7 +549,7 @@ class ImageEncodeDecodeTest(unittest.TestCase):
                 self.assertEqual(ew, full_ew)
 
                 # Decode the image in one pass
-                reconstructed_highres = kom.image.decode(predictions_fn, decode_fn, lowres, maps, dims,
+                reconstructed_highres = kom.image.decode(predictions_fn, decode_fn, lowres, (maps, dims),
                                                          padding=padding)
 
                 # Check the decoded image is lossless
@@ -580,11 +580,11 @@ class ImageEncodeDecodeTest(unittest.TestCase):
                 highres = self.dummy_highres()
 
                 # Encode the entire input at once to check for consistency
-                lowres, maps, dims = kom.image.encode(predictions_fn, encode_fn, highres,
-                                                      padding=padding)
+                lowres, (maps, dims) = kom.image.encode(predictions_fn, encode_fn, highres,
+                                                        padding=padding)
 
                 # Decode the image in chunks
-                reconstructed_highres = kom.image.decode_chunks(predictions_fn, decode_fn, lowres, maps, dims,
+                reconstructed_highres = kom.image.decode_chunks(predictions_fn, decode_fn, lowres, (maps, dims),
                                                                 chunk=decode_chunk, padding=padding,
                                                                 progress_fn=decode_progress_fn)
 
@@ -610,11 +610,11 @@ class ImageEncodeDecodeTest(unittest.TestCase):
                 highres = self.dummy_highres(shape=(2, *shape, 3))
 
                 # Encode the entire input at once to check for consistency
-                lowres, maps, dims = kom.image.encode(predictions_fn, encode_fn, highres,
-                                                      padding=padding)
+                lowres, (maps, dims) = kom.image.encode(predictions_fn, encode_fn, highres,
+                                                        padding=padding)
 
                 # Decode the image in chunks
-                reconstructed_highres = kom.image.decode_chunks(predictions_fn, decode_fn, lowres, maps, dims,
+                reconstructed_highres = kom.image.decode_chunks(predictions_fn, decode_fn, lowres, (maps, dims),
                                                                 chunk=decode_chunk, padding=padding,
                                                                 progress_fn=decode_progress_fn)
 
