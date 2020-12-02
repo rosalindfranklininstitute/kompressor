@@ -23,6 +23,9 @@
 
 from setuptools import setup, find_packages
 
+# Attempt to import jax to test that it is already installed
+import jax
+
 
 setup(
     version='1.0a',
@@ -43,4 +46,7 @@ setup(
     ],
     license='Apache License, Version 2.0',
     zip_safe=False,
+    install_requires=[
+        'numpy>=1.18.0'
+    ]
 )

@@ -33,7 +33,7 @@ RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selectio
 
 # Install python packages
 RUN pip3 install --no-cache-dir --upgrade \
-        mock pytest pytest-cov PyYAML coveralls coverage \
-        tqdm numpy nptyping scipy h5py pandas matplotlib jax jaxlib && \
+        mock pytest pytest-cov PyYAML coverage \
+        tqdm numpy scipy h5py pandas matplotlib jax jaxlib && \
     rm -rf /tmp/* && \
     find /usr/lib/python3.*/ -name 'tests' -exec rm -rf '{}' +
