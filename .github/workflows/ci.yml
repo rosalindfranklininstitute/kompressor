@@ -64,7 +64,14 @@ jobs:
 
       - name: Execute tests within container
         run: |
-          docker exec env python -m pytest --cov=src/kompressor tests/
+          docker exec env python -m pytest --cov=src/kompressor tests/ 2>&1 | tee pytest-results.txt
+
+      - name: Save test results as artifact
+        uses: actions/upload-artifact@v2
+          if: always()
+          with:
+            name: pytest-results
+            path: pytest-results.txt
 
       - name: Halt container
         run: docker stop env
