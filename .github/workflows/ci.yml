@@ -33,6 +33,7 @@ on:
 
 jobs:
   build:
+    name: Build Docker image, execute tests, and push to Dockerhub
     runs-on: ubuntu-20.04
 
     steps:
@@ -40,48 +41,33 @@ jobs:
       # Configure environment variable depending on which branch we are running on
       - name: Set env to master
         if: endsWith(github.ref, '/master')
-        run: |
-          echo "DOCKER_REPO=kompressor:env-v1" >> $GITHUB_ENV
+        run: echo "DOCKER_REPO=kompressor:env-v1" >> $GITHUB_ENV
       - name: Set env to development
         if: endsWith(github.ref, '/development')
-        run: |
-          echo "DOCKER_REPO=kompressor:env-v1-dev" >> $GITHUB_ENV
+        run: echo "DOCKER_REPO=kompressor:env-v1-dev" >> $GITHUB_ENV
 
-      # Checks-out Kompressor repository under $GITHUB_WORKSPACE
+      # Checks-out Kompressor repository under $(pwd)
       - uses: actions/checkout@v2
-
-      - name: Show workspace
-        run: |
-          ls -la
-          echo $GITHUB_WORKSPACE
-          ls -la $GITHUB_WORKSPACE
 
       # Build Docker image and execute tests, push image to Dockerhub on success
       - name: Pull existing Docker image
-        run: |
-          docker pull ${{ secrets.DOCKER_USERNAME }}/$DOCKER_REPO || true
+        run: docker pull ${{ secrets.DOCKER_USERNAME }}/$DOCKER_REPO || true
 
       - name: Build Docker image
-        run: |
-          docker build --pull --cache-from ${{ secrets.DOCKER_USERNAME }}/$DOCKER_REPO --tag ${{ secrets.DOCKER_USERNAME }}/$DOCKER_REPO .
+        run: docker build --pull --cache-from ${{ secrets.DOCKER_USERNAME }}/$DOCKER_REPO --tag ${{ secrets.DOCKER_USERNAME }}/$DOCKER_REPO .
 
       - name: Start container
-        run: |
-          docker run -itd --name env -v $(pwd):/tmp/repo/ -w /tmp/repo/ ${{ secrets.DOCKER_USERNAME }}/$DOCKER_REPO
-          docker exec env pwd
-          docker exec env ls -la
+        run: docker run -itd --name env -v $(pwd):/tmp/repo/ -w /tmp/repo/ ${{ secrets.DOCKER_USERNAME }}/$DOCKER_REPO
 
       - name: Install Kompressor within container
-        run: |
-          docker exec env pip install -e .
+        run: docker exec env pip install -e .
 
       - name: Execute tests within container
         run: |
           docker exec env python -m pytest --cov=src/kompressor tests/
 
       - name: Halt container
-        run: |
-          docker stop env
+        run: docker stop env
 
       - name: Push Docker image to Dockerhub
         run: |
