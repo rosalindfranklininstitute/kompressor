@@ -34,6 +34,9 @@ from .utils import \
     highres_from_lowres_and_maps, \
     features_from_lowres, pad_neighborhood
 
-# Import the 2D image encode decode functions
+
 from .encode_decode import \
-    encode, decode, encode_chunks, decode_chunks
+    encode, decode
+
+from .encode_decode_chunk import \
+    encode_chunks, decode_chunks
