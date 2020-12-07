@@ -41,30 +41,34 @@ jobs:
       # Configure environment variable depending on which branch we are running on
       - name: Set env to master
         if: endsWith(github.ref, '/master')
-        run: echo "DOCKER_REPO=kompressor:env-v1" >> $GITHUB_ENV
+        run: echo "DOCKER_REPO_TAG=kompressor:env-v1" >> $GITHUB_ENV
       - name: Set env to development
         if: endsWith(github.ref, '/development')
-        run: echo "DOCKER_REPO=kompressor:env-v1-dev" >> $GITHUB_ENV
+        run: echo "DOCKER_REPO_TAG=kompressor:env-v1-dev" >> $GITHUB_ENV
 
       # Checks-out Kompressor repository under $(pwd)
       - uses: actions/checkout@v2
 
       # Build Docker image and execute tests, push image to Dockerhub on success
       - name: Pull existing Docker image
-        run: docker pull ${{ secrets.DOCKER_USERNAME }}/$DOCKER_REPO || true
+        run: docker pull ${{ secrets.DOCKER_USERNAME }}/$DOCKER_REPO_TAG || true
 
       - name: Build Docker image
-        run: docker build --pull --cache-from ${{ secrets.DOCKER_USERNAME }}/$DOCKER_REPO --tag ${{ secrets.DOCKER_USERNAME }}/$DOCKER_REPO .
+        run: docker build --pull --cache-from ${{ secrets.DOCKER_USERNAME }}/$DOCKER_REPO_TAG --tag ${{ secrets.DOCKER_USERNAME }}/$DOCKER_REPO_TAG .
 
       - name: Start container
-        run: docker run -itd --name env -v $(pwd):/tmp/repo/ -w /tmp/repo/ ${{ secrets.DOCKER_USERNAME }}/$DOCKER_REPO
+        run: docker run -itd --name env -v $(pwd):/tmp/repo/ -w /tmp/repo/ ${{ secrets.DOCKER_USERNAME }}/$DOCKER_REPO_TAG
 
       - name: Install Kompressor within container
         run: docker exec env pip install -e .
 
       - name: Execute tests within container
         run: |
-          docker exec env python -m pytest --cov=src/kompressor tests/ 2>&1 | tee pytest-results.txt
+          docker exec env python -m pytest --cov=src/kompressor tests/ --cov-report xml:coverage.xml --cov-report term-missing 2>&1 | tee pytest-results.txt
+
+      - name: Submit coverage to Codecov
+        run: |
+          bash <(curl -s https://codecov.io/bash) -t ${{ secrets.CODECOV_TOKEN }} -f coverage.xml
 
       - name: Save test results as artifact
         if: always()
@@ -79,4 +83,4 @@ jobs:
       - name: Push Docker image to Dockerhub
         run: |
           echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
-          docker push ${{ secrets.DOCKER_USERNAME }}/$DOCKER_REPO
+          docker push ${{ secrets.DOCKER_USERNAME }}/$DOCKER_REPO_TAG

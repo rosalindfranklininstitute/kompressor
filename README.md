@@ -1,5 +1,7 @@
 # Kompressor
 
+![CI - Build Docker Image and Execute Tests](https://github.com/JossWhittle/Kompressor/workflows/CI%20-%20Build%20Docker%20Image%20and%20Execute%20Tests/badge.svg) [![codecov](https://codecov.io/gh/JossWhittle/Kompressor/branch/master/graph/badge.svg?token=08IFM8O4NR)](https://codecov.io/gh/JossWhittle/Kompressor)
+
 A neural compression framework built on top of JAX.
 
 ## Install
