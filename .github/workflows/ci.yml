@@ -64,7 +64,7 @@ jobs:
 
       - name: Execute tests within container
         run: |
-          docker exec env python -m pytest --cov=src tests/ --cov-report xml:coverage.xml --cov-report term-missing 2>&1 | tee pytest-results.txt
+          docker exec env python -m pytest --cov=src tests/ --cov-report xml:coverage.xml --cov-report term-missing 2>&1 | tee pytest-cpu-results.txt
 
       - name: Submit coverage to Codecov
         run: |
@@ -74,8 +74,8 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v2
         with:
-          name: pytest-results
-          path: pytest-results.txt
+          name: pytest-cpu-results
+          path: pytest-cpu-results.txt
 
       - name: Halt container
         run: docker stop env
@@ -94,10 +94,10 @@ jobs:
       # Configure environment variable depending on which branch we are running on
       - name: Set env to master
         if: endsWith(github.ref, '/master')
-        run: echo "DOCKER_REPO_TAG=kompressor:env-v1-cuda10" >> $GITHUB_ENV
+        run: echo "DOCKER_REPO_TAG=kompressor:env-v1-cuda110" >> $GITHUB_ENV
       - name: Set env to development
         if: endsWith(github.ref, '/development')
-        run: echo "DOCKER_REPO_TAG=kompressor:env-v1-cuda10-dev" >> $GITHUB_ENV
+        run: echo "DOCKER_REPO_TAG=kompressor:env-v1-cuda110-dev" >> $GITHUB_ENV
 
       # Checks-out Kompressor repository under $(pwd)
       - uses: actions/checkout@v2
@@ -114,6 +114,17 @@ jobs:
 
       - name: Install Kompressor within container
         run: docker exec env pip install -e .
+
+      - name: Execute tests within container
+        run: |
+          docker exec env python -m pytest --cov=src tests/ --cov-report term-missing 2>&1 | tee pytest-gpu-results.txt
+
+      - name: Save test results as artifact
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: pytest-gpu-results
+          path: pytest-gpu-results.txt
 
       - name: Halt container
         run: docker stop env
