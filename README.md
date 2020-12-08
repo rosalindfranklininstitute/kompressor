@@ -19,7 +19,9 @@ python -m pytest --cov=src/kompressor tests/
 
 Docker image for the Kompressor dependencies (CPU execution only) are provided in the `josswhittle/kompressor:env-v1` Dockerhub image.
 
-This image is used by the Travis CI builds.
+A CUDA GPU enabled Docker image is provided in the `josswhittle/kompressor:env-v1-cuda10` Dockerhub image.
+
+This CPU image is used by the CI build and testing.
 
 ```
 git clone https://github.com/JossWhittle/Kompressor.git
