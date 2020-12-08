@@ -21,7 +21,7 @@
 # SOFTWARE.
 
 
-FROM nvidia/cuda:10.0-base-ubuntu18.04
+FROM nvidia/cuda:11.0-base-ubuntu20.04
 
 # Install packages and register python3 as python
 RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections && \
@@ -35,8 +35,8 @@ RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selectio
 RUN pip3 install --no-cache-dir --upgrade \
         mock pytest pytest-cov PyYAML coverage \
         tqdm numpy scipy h5py pandas matplotlib && \
-    python3 --version && \
+    pip3 --version && \
     pip3 install --no-cache-dir --upgrade \
-        jax https://storage.googleapis.com/jax-releases/cuda100/jaxlib-0.1.56+cuda100-cp36-none-manylinux2010_x86_64.whl && \
+        jax jaxlib==0.1.57+cuda110 -f https://storage.googleapis.com/jax-releases/jax_releases.html && \
     rm -rf /tmp/* && \
     find /usr/lib/python3.*/ -name 'tests' -exec rm -rf '{}' +
