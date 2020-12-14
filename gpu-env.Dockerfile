@@ -35,8 +35,9 @@ RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selectio
 RUN pip3 install --no-cache-dir --upgrade \
         mock pytest pytest-cov PyYAML coverage \
         tqdm numpy scipy h5py pandas matplotlib && \
-    pip3 --version && \
     pip3 install --no-cache-dir --upgrade \
         jax jaxlib==0.1.57+cuda110 -f https://storage.googleapis.com/jax-releases/jax_releases.html && \
+    pip3 install --no-cache-dir --upgrade \
+        git+https://github.com/deepmind/dm-haiku && \
     rm -rf /tmp/* && \
     find /usr/lib/python3.*/ -name 'tests' -exec rm -rf '{}' +
