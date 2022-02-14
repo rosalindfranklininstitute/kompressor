@@ -12,6 +12,8 @@ A neural compression framework built on top of JAX.
 
 ## Install
 
+`setup.py` assumes a compatible version of JAX and JAXLib are already installed. Automated build is tested for a `cuda:11.1-cudnn8-runtime-ubuntu20.04` environement with `jaxlib==0.1.76+cuda11.cudnn82`.
+
 ```
 git clone https://github.com/rosalindfranklininstitute/kompressor.git
 cd kompressor
@@ -23,10 +25,20 @@ python -m pytest --cov=src/kompressor tests/
 
 ## Install & Run through Docker environment
 
-Docker image for the Kompressor dependencies are provided in the `rosalindfranklininstitute/kompressor:master` Quay.io image.
+Docker image for the Kompressor dependencies are provided in the `quay.io/rosalindfranklininstitute/kompressor:main` Quay.io image.
 
 ```
 # Run the container for the Kompressor environment (mounting the present working directory)
-docker run --rm rosalindfranklininstitute/kompressor:master \
+docker run --rm quay.io/rosalindfranklininstitute/kompressor:main \
+    python -m pytest --cov=/usr/local/kompressor/src/kompressor /usr/local/kompressor/tests
+```
+
+## Install & Run through Singularity environment
+
+Singularity image for the Kompressor dependencies are provided in the `rosalindfranklininstitute/kompressor/kompressor:main` cloud.sylabs.io image.
+
+```
+singularity pull library://rosalindfranklininstitute/kompressor/kompressor:main
+singularity run kompressor_main.sif \
     python -m pytest --cov=/usr/local/kompressor/src/kompressor /usr/local/kompressor/tests
 ```

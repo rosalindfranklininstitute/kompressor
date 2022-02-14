@@ -21,7 +21,7 @@
 # SOFTWARE.
 
 
-name: CI - Update README from Template
+name: Update README
 
 on:
   push:
