@@ -21,21 +21,14 @@
 # SOFTWARE.
 
 
-name: Build
+name: Build Singularity
 
 on:
-  push:
-    branches: [ master, development ]
-    paths-ignore:
-      - README.md
-      - README.template
-      - .github/workflows/readme.yml
-
   workflow_dispatch:
 
 jobs:
-  build-quay:
-    name: Build
+  build-singularity:
+    name: Build Singularity
     runs-on: ubuntu-20.04
 
     steps:
@@ -49,26 +42,30 @@ jobs:
           echo "QUAY_IMAGE_NAME=quay.io/${{ secrets.QUAY_ORG }}/${{ secrets.QUAY_REPO }}:$IMAGE_TAG" >> $GITHUB_ENV
           echo "SYLABS_IMAGE_NAME=${{ secrets.SYLABS_ORG }}/${{ secrets.SYLABS_REPO }}/${{ secrets.SYLABS_REPO }}:$IMAGE_TAG" >> $GITHUB_ENV
 
-      # Checks-out Kompressor repository under $(pwd)
-      - uses: actions/checkout@v2
-
-      # Build Docker image, push image to Quay.io on success
+      # Pull Docker image from Quay.io
 
       - name: Docker container build
         run: |
-          docker pull $QUAY_IMAGE_NAME || true
-          docker build --pull --cache-from $QUAY_IMAGE_NAME --tag $QUAY_IMAGE_NAME -f Dockerfile .
+          docker pull $QUAY_IMAGE_NAME
 
-      - name: Docker container tests
-        run: |
-          docker run --rm -v $(pwd):/tmp/repo/ -w /tmp/repo/ $QUAY_IMAGE_NAME \
-            python -m pytest --cov=/usr/local/kompressor/src/kompressor /usr/local/kompressor/tests --cov-report xml:coverage.xml --cov-report term-missing
+      # Convert Docker image to Singularity image and push to Sylabs.io on success
 
-      - name: Docker container push to Quay.io
+      - name: Singularity container environment
         run: |
-          echo "${{ secrets.QUAY_TOKEN }}" | docker login -u "${{ secrets.QUAY_USERNAME }}" --password-stdin quay.io
-          docker push $QUAY_IMAGE_NAME
+          docker pull quay.io/singularity/singularity:v3.9.4-slim
+          docker run --name singularity_env -itd --entrypoint /bin/bash quay.io/singularity/singularity:v3.9.4-slim
 
-      - name: Codecov push coverage results
+      - name: Singularity container build
         run: |
-          bash <(curl -s https://codecov.io/bash) -t ${{ secrets.CODECOV_TOKEN }} -f coverage.xml
+          docker exec singularity_env singularity build ${{ secrets.SYLABS_REPO }}.sif docker://$QUAY_IMAGE_NAME
+
+      - name: Singularity container push to Sylabs.io
+        run: |
+          echo "${{ secrets.SYLABS_TOKEN }}" > sylabs_token
+          docker exec singularity_env singularity remote login --tokenfile sylabs_token
+          docker exec singularity_env singularity push --allow-unsigned ${{ secrets.SYLABS_REPO }}.sif library://$SYLABS_IMAGE_NAME
+
+      - name: Singularity container environment halt
+        run: |
+          docker stop singularity_env
+          docker rm singularity_env
