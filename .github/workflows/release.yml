@@ -75,7 +75,7 @@ jobs:
       - name: Singularity container environment
         run: |
           docker pull quay.io/singularity/singularity:v3.9.4-slim
-          docker run --name singularity_env -itd --entrypoint /bin/bash quay.io/singularity/singularity:v3.9.4-slim
+          docker run --name singularity_env -itd --entrypoint /bin/bash -v $(pwd):/tmp/repo/ -w /tmp/repo/ quay.io/singularity/singularity:v3.9.4-slim
 
       - name: Singularity container build
         run: |
@@ -83,7 +83,8 @@ jobs:
 
       - name: Singularity container push to Sylabs.io
         run: |
-          docker exec singularity_env singularity remote login -p "${{ secrets.SYLABS_TOKEN }}"
+          echo "${{ secrets.SYLABS_TOKEN }}" > sylabs_token
+          docker exec singularity_env singularity remote login --tokenfile sylabs_token
           docker exec singularity_env singularity push --allow-unsigned ${{ secrets.SYLABS_REPO }}.sif library://$SYLABS_IMAGE_NAME
 
       - name: Singularity container environment halt
