@@ -12,7 +12,7 @@ A neural compression framework built on top of JAX.
 
 ## Install
 
-`setup.py` assumes a compatible version of JAX and JAXLib are already installed. Automated build is tested for a `cuda:11.1-cudnn8-runtime-ubuntu20.04` environement with `jaxlib==0.1.76+cuda11.cudnn82`.
+`setup.py` assumes a compatible version of JAX and JAXLib are already installed. Automated build is tested for a `cuda:11.1-cudnn8-runtime-ubuntu20.04` environment with `jaxlib==0.1.76+cuda11.cudnn82`.
 
 ```
 git clone https://github.com/rosalindfranklininstitute/kompressor.git
