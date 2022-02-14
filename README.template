@@ -1,0 +1,32 @@
+# Kompressor
+
+![GitHub](https://img.shields.io/github/license/{{ env['GITHUB_REPOSITORY'] }}?kill_cache=1)
+
+| Branch  | CI | Coverage |
+|:-:|:-:|:-:|
+| `{{ env['GITHUB_BRANCH'] }}` (active) | [![GitHub Workflow Status (branch)](https://github.com/{{ env['GITHUB_REPOSITORY'] }}/actions/workflows/ci.yml/badge.svg?branch={{ env['GITHUB_BRANCH'] }})](https://github.com/{{ env['GITHUB_REPOSITORY'] }}/actions/workflows/ci.yml) | [![codecov](https://codecov.io/gh/{{ env['GITHUB_REPOSITORY'] }}/branch/{{ env['GITHUB_BRANCH'] }}/graph/badge.svg?token=nJk2eue86w)](https://codecov.io/gh/{{ env['GITHUB_REPOSITORY'] }}) |
+| `main` | [![GitHub Workflow Status (branch)](https://github.com/{{ env['GITHUB_REPOSITORY'] }}/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/{{ env['GITHUB_REPOSITORY'] }}/actions/workflows/ci.yml) | [![codecov](https://codecov.io/gh/{{ env['GITHUB_REPOSITORY'] }}/branch/main/graph/badge.svg?token=nJk2eue86w)](https://codecov.io/gh/{{ env['GITHUB_REPOSITORY'] }}) |
+| `development`  | [![GitHub Workflow Status (branch)](https://github.com/{{ env['GITHUB_REPOSITORY'] }}/actions/workflows/ci.yml/badge.svg?branch=development)](https://github.com/{{ env['GITHUB_REPOSITORY'] }}/actions/workflows/ci.yml) | [![codecov](https://codecov.io/gh/{{ env['GITHUB_REPOSITORY'] }}/branch/development/graph/badge.svg?token=nJk2eue86w)](https://codecov.io/gh/{{ env['GITHUB_REPOSITORY'] }}) |
+
+A neural compression framework built on top of JAX.
+
+## Install
+
+```
+git clone https://github.com/rosalindfranklininstitute/kompressor.git
+cd kompressor
+pip install -e .
+
+# Run tests
+python -m pytest --cov=src/kompressor tests/
+```
+
+## Install & Run through Docker environment
+
+Docker image for the Kompressor dependencies are provided in the `rosalindfranklininstitute/kompressor:master` Quay.io image.
+
+```
+# Run the container for the Kompressor environment (mounting the present working directory)
+docker run --rm rosalindfranklininstitute/kompressor:master \
+    python -m pytest --cov=/usr/local/kompressor/src/kompressor /usr/local/kompressor/tests
+```

@@ -26,8 +26,10 @@ name: CI - Build Images and Execute Tests
 on:
   push:
     branches: [ master, development ]
-  pull_request:
-    branches: [ master, development ]
+    paths-ignore:
+      - README.md
+      - README.template
+      - .github/workflows/readme.yml
 
   workflow_dispatch:
 
