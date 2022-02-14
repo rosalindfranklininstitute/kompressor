@@ -21,6 +21,7 @@
 # SOFTWARE.
 
 
+from functools import partial
 import jax
 import jax.numpy as jnp
 
@@ -35,6 +36,6 @@ def mean_abs_error(pred, gt):
     return jnp.mean(jnp.abs(jnp.float32(gt) - jnp.float32(pred)))
 
 
-@jax.partial(jax.jit, static_argnums=2)
+@partial(jax.jit, static_argnums=2)
 def mean_charbonnier_error(pred, gt, eps):
     return jnp.mean(jnp.sqrt(jnp.square(jnp.float32(gt) - jnp.float32(pred)) + jnp.square(eps)))

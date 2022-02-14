@@ -20,6 +20,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+from functools import partial
 import numpy as np
 import jax
 import jax.numpy as jnp
@@ -195,7 +196,7 @@ def highres_from_lowres_and_maps(lowres, maps):
 
 
 # TODO make padding default to 0 when JAX merges being able to have static named args in jit functions
-@jax.partial(jax.jit, static_argnums=1)
+@partial(jax.jit, static_argnums=1)
 def features_from_lowres(lowres, padding):
     # Extract the features around each 2x2x2 neighborhood (assumes the lowres is already padded)
     pd, ph, pw = (lowres.shape[1] - (padding * 2)) - 1, \
@@ -209,7 +210,7 @@ def features_from_lowres(lowres, padding):
                       for x in range((padding*2)+2)], axis=4)
 
 
-@jax.partial(jax.jit, static_argnums=1)
+@partial(jax.jit, static_argnums=1)
 def pad_neighborhood(lowres, padding):
     # Pad only the 3 spatial dimensions
     spatial_padding = ((padding, padding),) * 3
