@@ -8,9 +8,11 @@
 | `main` | [![GitHub Workflow Status (branch)](https://github.com/{{ env['GITHUB_REPOSITORY'] }}/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/{{ env['GITHUB_REPOSITORY'] }}/actions/workflows/ci.yml) | [![codecov](https://codecov.io/gh/{{ env['GITHUB_REPOSITORY'] }}/branch/main/graph/badge.svg?token=nJk2eue86w)](https://codecov.io/gh/{{ env['GITHUB_REPOSITORY'] }}) |
 | `development`  | [![GitHub Workflow Status (branch)](https://github.com/{{ env['GITHUB_REPOSITORY'] }}/actions/workflows/ci.yml/badge.svg?branch=development)](https://github.com/{{ env['GITHUB_REPOSITORY'] }}/actions/workflows/ci.yml) | [![codecov](https://codecov.io/gh/{{ env['GITHUB_REPOSITORY'] }}/branch/development/graph/badge.svg?token=nJk2eue86w)](https://codecov.io/gh/{{ env['GITHUB_REPOSITORY'] }}) |
 
-```
-{{ env['GITHUB_TAGS'] }}
-```
+| Release  | CI | Coverage |
+|:-:|:-:|:-:|
+{% for tag in github_releases -%}
+| `{{ tag }}` | [![GitHub Workflow Status (branch)](https://github.com/{{ env['GITHUB_REPOSITORY'] }}/actions/workflows/release.yml/badge.svg?branch={{ tag }})](https://github.com/{{ env['GITHUB_REPOSITORY'] }}/actions/workflows/ci.yml) | [![codecov](https://codecov.io/gh/{{ env['GITHUB_REPOSITORY'] }}/branch/{{ tag }}/graph/badge.svg?token=nJk2eue86w)](https://codecov.io/gh/{{ env['GITHUB_REPOSITORY'] }}) |
+{%- endfor %}
 
 A neural compression framework built on top of JAX.
 

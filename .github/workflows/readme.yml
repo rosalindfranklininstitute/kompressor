@@ -37,10 +37,10 @@ on:
 env:
   JINJA_CMD: |
     import os, sys, jinja2
-    os.environ['GITHUB_TAGS'] = list(map((lambda tag: tag[len('refs/tags/v'):]),
-                                     filter((lambda tag: tag.startswith('refs/tags/v')),
-                                     os.environ['GITHUB_TAGS'].split())))
-    sys.stdout.write(jinja2.Template(sys.stdin.read()).render(env=os.environ))
+    github_releases = list(map((lambda tag: tag[len('refs/tags/'):]),
+                           filter((lambda tag: tag.startswith('refs/tags/v')),
+                           os.environ['GITHUB_TAGS'].split())))
+    sys.stdout.write(jinja2.Template(sys.stdin.read()).render(env=os.environ, github_releases=github_releases))
 
 jobs:
   update-readme:
