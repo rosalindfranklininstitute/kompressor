@@ -28,7 +28,7 @@ python -m pytest --cov=src/kompressor tests/
 Docker image for the Kompressor dependencies are provided in the `quay.io/rosalindfranklininstitute/kompressor:main` Quay.io image.
 
 ```
-# Run the container for the Kompressor environment (mounting the present working directory)
+# Run the container for the Kompressor environment
 docker run --rm quay.io/rosalindfranklininstitute/kompressor:main \
     python -m pytest --cov=/usr/local/kompressor/src/kompressor /usr/local/kompressor/tests
 ```
