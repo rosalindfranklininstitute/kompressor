@@ -282,6 +282,79 @@ class ImageEncodeDecodeTest(unittest.TestCase):
                 self.assertEqual(reconstructed_highres.ndim, highres.ndim)
                 self.assertTrue(np.allclose(reconstructed_highres, highres))
 
+    def test_encode_decode_raw(self):
+        """
+        Test we can do an encode + decode cycle on an image processing the whole input at once using different paddings
+        using a regression predictor and raw encoding.
+        """
+
+        padding = 0
+
+        # Make a prediction function for this test
+        predictions_fn = self.dummy_predictions_fn(padding=padding)
+        encode_fn = kom.image.encode_values_raw
+        decode_fn = kom.image.decode_values_raw
+
+        # Get a dummy highres image to encode + decode
+        highres = jnp.int32(self.dummy_highres())
+
+        # Encode the entire image at once
+        lowres, (maps, dims) = kom.image.encode(predictions_fn, encode_fn, highres,
+                                                padding=padding)
+
+        # Check that even padding was applied correctly
+        eh, ew = dims
+        self.assertEqual(eh, 0)
+        self.assertEqual(ew, 0)
+
+        # Check that the lowres and maps are the correct sizes and dtypes
+        lrmap, udmap, cmap = maps
+
+        self.assertEqual(lowres.dtype, highres.dtype)
+        self.assertEqual(lowres.ndim, highres.ndim)
+        self.assertTrue(np.allclose(lowres.shape, [
+            highres.shape[0],
+            ((highres.shape[1] - 1) // 2) + 1,
+            ((highres.shape[2] - 1) // 2) + 1,
+            *highres.shape[3:]
+        ]))
+
+        self.assertEqual(lrmap.dtype, highres.dtype)
+        self.assertEqual(lrmap.ndim, highres.ndim)
+        self.assertTrue(np.allclose(lrmap.shape, [
+            highres.shape[0],
+            (highres.shape[1] - 1) // 2,
+            ((highres.shape[2] - 1) // 2) + 1,
+            *highres.shape[3:]
+        ]))
+
+        self.assertEqual(udmap.dtype, highres.dtype)
+        self.assertEqual(udmap.ndim, highres.ndim)
+        self.assertTrue(np.allclose(udmap.shape, [
+            highres.shape[0],
+            ((highres.shape[1] - 1) // 2) + 1,
+            (highres.shape[2] - 1) // 2,
+            *highres.shape[3:]
+        ]))
+
+        self.assertEqual(cmap.dtype, highres.dtype)
+        self.assertEqual(cmap.ndim, highres.ndim)
+        self.assertTrue(np.allclose(cmap.shape, [
+            highres.shape[0],
+            (highres.shape[1] - 1) // 2,
+            (highres.shape[2] - 1) // 2,
+            *highres.shape[3:]
+        ]))
+
+        # Decode the entire image at once
+        reconstructed_highres = kom.image.decode(predictions_fn, decode_fn, lowres, (maps, dims),
+                                                 padding=padding)
+
+        # Check the decoded image is lossless
+        self.assertEqual(reconstructed_highres.dtype, highres.dtype)
+        self.assertEqual(reconstructed_highres.ndim, highres.ndim)
+        self.assertTrue(np.allclose(reconstructed_highres, highres))
+
     def test_encode_chunks(self):
         """
         Test we can encode an image processing the input in chunks and with different paddings.
