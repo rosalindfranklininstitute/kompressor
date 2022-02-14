@@ -21,7 +21,7 @@
 # SOFTWARE.
 
 
-FROM nvidia/cuda:11.0-base-ubuntu20.04
+FROM nvidia/cuda:11.1-cudnn8-devel-ubuntu20.04
 
 # Install packages and register python3 as python
 RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections && \
@@ -36,7 +36,7 @@ RUN pip3 install --no-cache-dir --upgrade \
         mock pytest pytest-cov PyYAML coverage \
         tqdm numpy scipy h5py pandas matplotlib && \
     pip3 install --no-cache-dir --upgrade \
-        jax jaxlib==0.1.57+cuda110 -f https://storage.googleapis.com/jax-releases/jax_releases.html && \
+        jax jaxlib==jaxlib-0.1.76+cuda11.cudnn82 -f https://storage.googleapis.com/jax-releases/jax_releases.html && \
     pip3 install --no-cache-dir --upgrade \
         git+https://github.com/deepmind/dm-haiku && \
     rm -rf /tmp/* && \
