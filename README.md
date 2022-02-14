@@ -8,6 +8,10 @@
 | `main` | [![GitHub Workflow Status (branch)](https://github.com/rosalindfranklininstitute/kompressor/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/rosalindfranklininstitute/kompressor/actions/workflows/ci.yml) | [![codecov](https://codecov.io/gh/rosalindfranklininstitute/kompressor/branch/main/graph/badge.svg?token=nJk2eue86w)](https://codecov.io/gh/rosalindfranklininstitute/kompressor) |
 | `development`  | [![GitHub Workflow Status (branch)](https://github.com/rosalindfranklininstitute/kompressor/actions/workflows/ci.yml/badge.svg?branch=development)](https://github.com/rosalindfranklininstitute/kompressor/actions/workflows/ci.yml) | [![codecov](https://codecov.io/gh/rosalindfranklininstitute/kompressor/branch/development/graph/badge.svg?token=nJk2eue86w)](https://codecov.io/gh/rosalindfranklininstitute/kompressor) |
 
+| Release  | CI | Coverage |
+|:-:|:-:|:-:|
+| `v0.0.0"` | [![GitHub Workflow Status (branch)](https://github.com/rosalindfranklininstitute/kompressor/actions/workflows/release.yml/badge.svg?branch=v0.0.0")](https://github.com/rosalindfranklininstitute/kompressor/actions/workflows/ci.yml) | [![codecov](https://codecov.io/gh/rosalindfranklininstitute/kompressor/branch/v0.0.0"/graph/badge.svg?token=nJk2eue86w)](https://codecov.io/gh/rosalindfranklininstitute/kompressor) |
+
 A neural compression framework built on top of JAX.
 
 ## Install
