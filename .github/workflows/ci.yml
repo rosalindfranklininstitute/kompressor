@@ -32,6 +32,7 @@ on:
       - README.template
       - .github/workflows/readme.yml
       - .github/workflows/release.yml
+      - examples/*
 
   workflow_dispatch:
 
