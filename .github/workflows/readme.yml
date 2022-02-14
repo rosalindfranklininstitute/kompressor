@@ -55,6 +55,15 @@ jobs:
         run: |
           echo "GITHUB_BRANCH=${GITHUB_REF##*/}" >> $GITHUB_ENV
 
+      - name: Add ENV variable for remote release tags
+        run: |
+          echo "GITHUB_TAGS=\"`git ls-remote --tags origin`\"" >> $GITHUB_ENV
+
+      - name: Debug ENV
+        run: |
+          echo $GITHUB_BRANCH
+          echo $GITHUB_TAGS
+
       - name: Execute Jinja2
         run: |
           cat README.template | python3 -c "${JINJA_CMD}" > README.md
