@@ -34,6 +34,12 @@ from .utils import \
     highres_from_lowres_and_maps, \
     features_from_lowres, pad_neighborhood
 
+from .losses import \
+    mean_squared_error, \
+    mean_abs_error, \
+    mean_charbonnier_error, \
+    mean_total_variation
+
 from .encode_decode import \
     encode, decode
 
