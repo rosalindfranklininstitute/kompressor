@@ -8,7 +8,7 @@ A neural compression framework built on top of JAX.
 
 ```
 git clone https://github.com/rosalindfranklininstitute/kompressor.git
-cd Kompressor
+cd kompressor
 pip install -e .
 
 # Run tests
