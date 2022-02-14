@@ -4,14 +4,14 @@
 
 | Branch  | CI | Coverage |
 |:-:|:-:|:-:|
-| `{{ env['GITHUB_BRANCH'] }}` (active) | [![GitHub Workflow Status (branch)](https://github.com/{{ env['GITHUB_REPOSITORY'] }}/actions/workflows/ci.yml/badge.svg?branch={{ env['GITHUB_BRANCH'] }})](https://github.com/{{ env['GITHUB_REPOSITORY'] }}/actions/workflows/ci.yml) | [![codecov](https://codecov.io/gh/{{ env['GITHUB_REPOSITORY'] }}/branch/{{ env['GITHUB_BRANCH'] }}/graph/badge.svg?token=nJk2eue86w)](https://codecov.io/gh/{{ env['GITHUB_REPOSITORY'] }}) |
-| `main` | [![GitHub Workflow Status (branch)](https://github.com/{{ env['GITHUB_REPOSITORY'] }}/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/{{ env['GITHUB_REPOSITORY'] }}/actions/workflows/ci.yml) | [![codecov](https://codecov.io/gh/{{ env['GITHUB_REPOSITORY'] }}/branch/main/graph/badge.svg?token=nJk2eue86w)](https://codecov.io/gh/{{ env['GITHUB_REPOSITORY'] }}) |
-| `development`  | [![GitHub Workflow Status (branch)](https://github.com/{{ env['GITHUB_REPOSITORY'] }}/actions/workflows/ci.yml/badge.svg?branch=development)](https://github.com/{{ env['GITHUB_REPOSITORY'] }}/actions/workflows/ci.yml) | [![codecov](https://codecov.io/gh/{{ env['GITHUB_REPOSITORY'] }}/branch/development/graph/badge.svg?token=nJk2eue86w)](https://codecov.io/gh/{{ env['GITHUB_REPOSITORY'] }}) |
+| `{{ env['GITHUB_BRANCH'] }}` (active) | [![Build](https://github.com/{{ env['GITHUB_REPOSITORY'] }}/actions/workflows/ci.yml/badge.svg?branch={{ env['GITHUB_BRANCH'] }})](https://github.com/{{ env['GITHUB_REPOSITORY'] }}/actions/workflows/ci.yml) | [![codecov](https://codecov.io/gh/{{ env['GITHUB_REPOSITORY'] }}/branch/{{ env['GITHUB_BRANCH'] }}/graph/badge.svg?token=nJk2eue86w)](https://codecov.io/gh/{{ env['GITHUB_REPOSITORY'] }}) |
+| `main` | [![Build](https://github.com/{{ env['GITHUB_REPOSITORY'] }}/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/{{ env['GITHUB_REPOSITORY'] }}/actions/workflows/ci.yml) | [![codecov](https://codecov.io/gh/{{ env['GITHUB_REPOSITORY'] }}/branch/main/graph/badge.svg?token=nJk2eue86w)](https://codecov.io/gh/{{ env['GITHUB_REPOSITORY'] }}) |
+| `development`  | [![Build](https://github.com/{{ env['GITHUB_REPOSITORY'] }}/actions/workflows/ci.yml/badge.svg?branch=development)](https://github.com/{{ env['GITHUB_REPOSITORY'] }}/actions/workflows/ci.yml) | [![codecov](https://codecov.io/gh/{{ env['GITHUB_REPOSITORY'] }}/branch/development/graph/badge.svg?token=nJk2eue86w)](https://codecov.io/gh/{{ env['GITHUB_REPOSITORY'] }}) |
 
 | Release  | CI | Coverage |
 |:-:|:-:|:-:|
 {% for tag in github_releases -%}
-| `{{ tag }}` | [![GitHub Workflow Status (branch)](https://github.com/{{ env['GITHUB_REPOSITORY'] }}/actions/workflows/release.yml/badge.svg?branch={{ tag }})](https://github.com/{{ env['GITHUB_REPOSITORY'] }}/actions/workflows/ci.yml) | [![codecov](https://codecov.io/gh/{{ env['GITHUB_REPOSITORY'] }}/branch/{{ tag }}/graph/badge.svg?token=nJk2eue86w)](https://codecov.io/gh/{{ env['GITHUB_REPOSITORY'] }}) |
+| `{{ tag }}` | [![Release](https://github.com/{{ env['GITHUB_REPOSITORY'] }}/actions/workflows/release.yml/badge.svg?branch={{ tag }})](https://github.com/{{ env['GITHUB_REPOSITORY'] }}/actions/workflows/release.yml) | [![codecov](https://codecov.io/gh/{{ env['GITHUB_REPOSITORY'] }}/branch/refs/tags/{{ tag }}/graph/badge.svg?token=nJk2eue86w)](https://codecov.io/gh/{{ env['GITHUB_REPOSITORY'] }}) |
 {%- endfor %}
 
 A neural compression framework built on top of JAX.
