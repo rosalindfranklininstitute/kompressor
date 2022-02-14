@@ -31,6 +31,7 @@ on:
       - README.md
       - README.template
       - .github/workflows/readme.yml
+      - .github/workflows/release.yml
 
   workflow_dispatch:
 
