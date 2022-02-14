@@ -25,7 +25,8 @@ name: Build
 
 on:
   push:
-    branches: [ master, development ]
+    branches:
+      - '**'
     paths-ignore:
       - README.md
       - README.template

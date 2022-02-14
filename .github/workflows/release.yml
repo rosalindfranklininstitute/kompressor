@@ -21,19 +21,23 @@
 # SOFTWARE.
 
 
-name: Build Singularity
+name: Build
 
 on:
+  push:
+    tags:
+      - 'v**'
+
   workflow_dispatch:
 
 jobs:
-  build-singularity:
-    name: Build Singularity
+  build-release:
+    name: Build Quay and Singularity Release
     runs-on: ubuntu-20.04
 
     steps:
 
-      - name: Set branch name
+      - name: Set tag name
         run: |
           echo "IMAGE_TAG=${GITHUB_REF##*/}" >> $GITHUB_ENV
 
@@ -42,11 +46,29 @@ jobs:
           echo "QUAY_IMAGE_NAME=quay.io/${{ secrets.QUAY_ORG }}/${{ secrets.QUAY_REPO }}:$IMAGE_TAG" >> $GITHUB_ENV
           echo "SYLABS_IMAGE_NAME=${{ secrets.SYLABS_ORG }}/${{ secrets.SYLABS_REPO }}/${{ secrets.SYLABS_REPO }}:$IMAGE_TAG" >> $GITHUB_ENV
 
-      # Pull Docker image from Quay.io
+      # Checks-out Kompressor repository under $(pwd)
+      - uses: actions/checkout@v2
+
+      # Build Docker image, push image to Quay.io on success
 
       - name: Docker container build
         run: |
-          docker pull $QUAY_IMAGE_NAME
+          docker pull $QUAY_IMAGE_NAME || true
+          docker build --pull --cache-from $QUAY_IMAGE_NAME --tag $QUAY_IMAGE_NAME -f Dockerfile .
+
+      - name: Docker container tests
+        run: |
+          docker run --rm -v $(pwd):/tmp/repo/ -w /tmp/repo/ $QUAY_IMAGE_NAME \
+            python -m pytest --cov=/usr/local/kompressor/src/kompressor /usr/local/kompressor/tests --cov-report xml:coverage.xml --cov-report term-missing
+
+      - name: Docker container push to Quay.io
+        run: |
+          echo "${{ secrets.QUAY_TOKEN }}" | docker login -u "${{ secrets.QUAY_USERNAME }}" --password-stdin quay.io
+          docker push $QUAY_IMAGE_NAME
+
+      - name: Codecov push coverage results
+        run: |
+          bash <(curl -s https://codecov.io/bash) -t ${{ secrets.CODECOV_TOKEN }} -f coverage.xml
 
       # Convert Docker image to Singularity image and push to Sylabs.io on success
 
