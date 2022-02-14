@@ -21,7 +21,7 @@
 # SOFTWARE.
 
 
-name: CI - Build Docker Image and Execute Tests
+name: CI - Build Images and Execute Tests
 
 on:
   push:
@@ -32,104 +32,63 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-cpu-env:
-    name: CPU Env
+  build-containers:
+    name: Build containers
     runs-on: ubuntu-20.04
 
     steps:
 
-      # Configure environment variable depending on which branch we are running on
-      - name: Set env to master
-        if: endsWith(github.ref, '/master')
-        run: echo "DOCKER_REPO_TAG=kompressor:env-v1" >> $GITHUB_ENV
-      - name: Set env to development
-        if: endsWith(github.ref, '/development')
-        run: echo "DOCKER_REPO_TAG=kompressor:env-v1-dev" >> $GITHUB_ENV
+      - name: Set branch name
+        run: |
+          echo "IMAGE_TAG=${GITHUB_REF##*/}" >> $GITHUB_ENV
+
+      - name: Set image names
+        run: |
+          echo "QUAY_IMAGE_NAME=quay.io/${{ secrets.QUAY_ORG }}/${{ secrets.QUAY_REPO }}:$IMAGE_TAG" >> $GITHUB_ENV
+          echo "SYLABS_IMAGE_NAME=${{ secrets.SYLABS_ORG }}/${{ secrets.SYLABS_REPO }}/${{ secrets.SYLABS_REPO }}:$IMAGE_TAG" >> $GITHUB_ENV
 
       # Checks-out Kompressor repository under $(pwd)
       - uses: actions/checkout@v2
 
-      # Build Docker image and execute tests, push image to Dockerhub on success
-      - name: Pull existing Docker image
-        run: docker pull ${{ secrets.DOCKER_USERNAME }}/$DOCKER_REPO_TAG || true
+      # Build Docker image, push image to Quay.io on success
 
-      - name: Build Docker image
-        run: docker build --pull --cache-from ${{ secrets.DOCKER_USERNAME }}/$DOCKER_REPO_TAG --tag ${{ secrets.DOCKER_USERNAME }}/$DOCKER_REPO_TAG - < cpu-env.Dockerfile
-
-      - name: Start container
-        run: docker run -itd --name env -v $(pwd):/tmp/repo/ -w /tmp/repo/ ${{ secrets.DOCKER_USERNAME }}/$DOCKER_REPO_TAG
-
-      - name: Install Kompressor within container
-        run: docker exec env pip install -e .
-
-      - name: Execute tests within container
+      - name: Docker container build
         run: |
-          docker exec env python -m pytest --cov=src tests/ --cov-report xml:coverage.xml --cov-report term-missing 2>&1 | tee pytest-cpu-results.txt
+          docker pull $QUAY_IMAGE_NAME || true
+          docker build --pull --cache-from $QUAY_IMAGE_NAME --tag $QUAY_IMAGE_NAME -f Dockerfile .
 
-      - name: Submit coverage to Codecov
+      - name: Docker container tests
+        run: |
+          docker run --rm -v $(pwd):/tmp/repo/ -w /tmp/repo/ $QUAY_IMAGE_NAME \
+            python -m pytest --cov=/usr/local/kompressor/src/kompressor /usr/local/kompressor/tests --cov-report xml:coverage.xml --cov-report term-missing
+
+      - name: Docker container push to Quay.io
+        run: |
+          echo "${{ secrets.QUAY_TOKEN }}" | docker login -u "${{ secrets.QUAY_USERNAME }}" --password-stdin quay.io
+          docker push $QUAY_IMAGE_NAME
+
+      - name: Codecov push coverage results
         run: |
           bash <(curl -s https://codecov.io/bash) -t ${{ secrets.CODECOV_TOKEN }} -f coverage.xml
 
-      - name: Save test results as artifact
-        if: always()
-        uses: actions/upload-artifact@v2
-        with:
-          name: pytest-cpu-results
-          path: pytest-cpu-results.txt
+      # Convert Docker image to Singularity image and push to Sylabs.io on success
 
-      - name: Halt container
-        run: docker stop env
-
-      - name: Push Docker image to Dockerhub
+      - name: Singularity container environment
         run: |
-          echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
-          docker push ${{ secrets.DOCKER_USERNAME }}/$DOCKER_REPO_TAG
+          docker pull quay.io/singularity/singularity:v3.9.4-slim
+          docker run --name singularity_env -itd --entrypoint /bin/bash -v $(pwd):/tmp/repo/ -w /tmp/repo/ quay.io/singularity/singularity:v3.9.4-slim
 
-  build-gpu-env:
-    name: GPU Env
-    runs-on: ubuntu-20.04
-
-    steps:
-
-      # Configure environment variable depending on which branch we are running on
-      - name: Set env to master
-        if: endsWith(github.ref, '/master')
-        run: echo "DOCKER_REPO_TAG=kompressor:env-v1-cuda110" >> $GITHUB_ENV
-      - name: Set env to development
-        if: endsWith(github.ref, '/development')
-        run: echo "DOCKER_REPO_TAG=kompressor:env-v1-cuda110-dev" >> $GITHUB_ENV
-
-      # Checks-out Kompressor repository under $(pwd)
-      - uses: actions/checkout@v2
-
-      # Build Docker image and execute tests, push image to Dockerhub on success
-      - name: Pull existing Docker image
-        run: docker pull ${{ secrets.DOCKER_USERNAME }}/$DOCKER_REPO_TAG || true
-
-      - name: Build Docker image
-        run: docker build --pull --cache-from ${{ secrets.DOCKER_USERNAME }}/$DOCKER_REPO_TAG --tag ${{ secrets.DOCKER_USERNAME }}/$DOCKER_REPO_TAG - < gpu-env.Dockerfile
-
-      - name: Start container
-        run: docker run -itd --name env -v $(pwd):/tmp/repo/ -w /tmp/repo/ ${{ secrets.DOCKER_USERNAME }}/$DOCKER_REPO_TAG
-
-      - name: Install Kompressor within container
-        run: docker exec env pip install -e .
-
-      - name: Execute tests within container
+      - name: Singularity container build
         run: |
-          docker exec env python -m pytest --cov=src tests/ --cov-report term-missing 2>&1 | tee pytest-gpu-results.txt
+          docker exec singularity_env singularity build ${{ secrets.SYLABS_REPO }}.sif docker://$QUAY_IMAGE_NAME
 
-      - name: Save test results as artifact
-        if: always()
-        uses: actions/upload-artifact@v2
-        with:
-          name: pytest-gpu-results
-          path: pytest-gpu-results.txt
-
-      - name: Halt container
-        run: docker stop env
-
-      - name: Push Docker image to Dockerhub
+      - name: Singularity container push to Sylabs.io
         run: |
-          echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
-          docker push ${{ secrets.DOCKER_USERNAME }}/$DOCKER_REPO_TAG
+          echo "${{ secrets.SYLABS_TOKEN }}" > sylabs_token
+          docker exec singularity_env singularity remote login --tokenfile sylabs_token
+          docker exec singularity_env singularity push --allow-unsigned ${{ secrets.SYLABS_REPO }}.sif library://$SYLABS_IMAGE_NAME
+
+      - name: Singularity container environment halt
+        run: |
+          docker stop singularity_env
+          docker rm singularity_env

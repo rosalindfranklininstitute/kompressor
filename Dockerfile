@@ -21,7 +21,7 @@
 # SOFTWARE.
 
 
-FROM ubuntu:focal
+FROM nvidia/cuda:11.0-base-ubuntu20.04
 
 # Install packages and register python3 as python
 RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections && \
@@ -36,8 +36,15 @@ RUN pip3 install --no-cache-dir --upgrade \
         mock pytest pytest-cov PyYAML coverage \
         tqdm numpy scipy h5py pandas matplotlib && \
     pip3 install --no-cache-dir --upgrade \
-        jax jaxlib && \
+        jax jaxlib==0.1.57+cuda110 -f https://storage.googleapis.com/jax-releases/jax_releases.html && \
     pip3 install --no-cache-dir --upgrade \
         git+https://github.com/deepmind/dm-haiku && \
+    rm -rf /tmp/* && \
+    find /usr/lib/python3.*/ -name 'tests' -exec rm -rf '{}' +
+
+# Install Kompressor
+ADD . /usr/local/kompressor
+WORKDIR /usr/local/kompressor
+RUN pip3 install -e . && \
     rm -rf /tmp/* && \
     find /usr/lib/python3.*/ -name 'tests' -exec rm -rf '{}' +

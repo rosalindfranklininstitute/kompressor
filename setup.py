@@ -31,7 +31,7 @@ setup(
     version='1.0a',
     name='kompressor',
     description='A neural compression framework built on top of JAX.',
-    url='https://github.com/JossWhittle/Kompressor',
+    url='https://github.com/rosalindfranklininstitute/kompressor',
     author='Joss Whittle',
     author_email='joss.whittle@rfi.ac.uk',
     packages=find_packages('src'),

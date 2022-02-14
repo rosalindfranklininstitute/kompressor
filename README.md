@@ -1,13 +1,13 @@
 # Kompressor
 
-![CI - Build Docker Image and Execute Tests](https://github.com/JossWhittle/Kompressor/workflows/CI%20-%20Build%20Docker%20Image%20and%20Execute%20Tests/badge.svg) [![codecov](https://codecov.io/gh/JossWhittle/Kompressor/branch/master/graph/badge.svg?token=08IFM8O4NR)](https://codecov.io/gh/JossWhittle/Kompressor)
+![CI - Build Docker Image and Execute Tests](https://github.com/rosalindfranklininstitute/kompressor/workflows/CI%20-%20Build%20Images%20and%20Execute%20Tests/badge.svg) [![codecov](https://codecov.io/gh/rosalindfranklininstitute/kompressor/branch/master/graph/badge.svg?token=)](https://codecov.io/gh/rosalindfranklininstitute/kompressor)
 
 A neural compression framework built on top of JAX.
 
 ## Install
 
 ```
-git clone https://github.com/JossWhittle/Kompressor.git
+git clone https://github.com/rosalindfranklininstitute/kompressor.git
 cd Kompressor
 pip install -e .
 
@@ -17,26 +17,10 @@ python -m pytest --cov=src/kompressor tests/
 
 ## Install & Run through Docker environment
 
-Docker image for the Kompressor dependencies (CPU execution only) are provided in the `josswhittle/kompressor:env-v1` Dockerhub image.
-
-A CUDA GPU enabled Docker image is provided in the `josswhittle/kompressor:env-v1-cuda10` Dockerhub image.
-
-This CPU image is used by the CI build and testing.
+Docker image for the Kompressor dependencies are provided in the `rosalindfranklininstitute/kompressor:master` Quay.io image.
 
 ```
-git clone https://github.com/JossWhittle/Kompressor.git
-cd Kompressor
-
 # Run the container for the Kompressor environment (mounting the present working directory)
-docker run -itd --name env -v $(pwd):/tmp/repo/ -w /tmp/repo/ josswhittle/kompressor:env-v1
-
-# Install the current version version of Kompressor inside the container 
-# Installation only persists until container is stopped
-docker exec env pip install -e .
-
-# Run tests (including code coverage)
-docker exec env python -m pytest --cov=src/kompressor tests/
-
-# Halt the container when finished
-docker stop env
+docker run --rm rosalindfranklininstitute/kompressor:master \
+    python -m pytest --cov=/usr/local/kompressor/src/kompressor /usr/local/kompressor/tests
 ```
