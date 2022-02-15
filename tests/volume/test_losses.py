@@ -49,7 +49,7 @@ class VolumeLossesTest(unittest.TestCase):
 
         # Check the loss has the correct size and dtype
         self.assertEqual(jnp.float32, loss.dtype)
-        self.assertEqual(0, loss.ndim)
+        self.assertEqual(1, loss.ndim)
         self.assertTrue(np.allclose(1.0, loss))
 
     def test_mean_abs_error(self):
@@ -65,7 +65,7 @@ class VolumeLossesTest(unittest.TestCase):
 
         # Check the loss has the correct size and dtype
         self.assertEqual(jnp.float32, loss.dtype)
-        self.assertEqual(0, loss.ndim)
+        self.assertEqual(1, loss.ndim)
         self.assertTrue(np.allclose(1.0, loss))
 
     def test_mean_charbonnier_error(self):
@@ -81,7 +81,7 @@ class VolumeLossesTest(unittest.TestCase):
 
         # Check the loss has the correct size and dtype
         self.assertEqual(jnp.float32, loss.dtype)
-        self.assertEqual(0, loss.ndim)
+        self.assertEqual(1, loss.ndim)
         self.assertTrue(np.allclose(1.0, loss))
 
     def test_mean_total_variation(self):
@@ -97,5 +97,5 @@ class VolumeLossesTest(unittest.TestCase):
 
         # Check the loss has the correct size and dtype
         self.assertEqual(jnp.float32, loss.dtype)
-        self.assertEqual(0, loss.ndim)
+        self.assertEqual(1, loss.ndim)
         self.assertTrue(np.allclose(0.0, loss))

@@ -29,7 +29,8 @@ from ..losses import mean_squared_error, mean_abs_error, mean_charbonnier_error
 
 @jax.jit
 def mean_total_variation(input):
-    z_var = input[:, 1:, :, :] - input[:, :-1, :, :]
-    y_var = input[:, :, 1:, :] - input[:, :, :-1, :]
-    x_var = input[:, :, :, 1:] - input[:, :, :, :-1]
-    return (jnp.mean(z_var) + jnp.mean(y_var) + jnp.mean(x_var)) / 3.0
+    batch_size = input.shape[0]
+    z_var = jnp.mean(jnp.reshape((input[:, 1:, :, :] - input[:, :-1, :, :]), (batch_size, -1)), axis=-1)
+    y_var = jnp.mean(jnp.reshape((input[:, :, 1:, :] - input[:, :, :-1, :]), (batch_size, -1)), axis=-1)
+    x_var = jnp.mean(jnp.reshape((input[:, :, :, 1:] - input[:, :, :, :-1]), (batch_size, -1)), axis=-1)
+    return (z_var + y_var + x_var) / 3.0
