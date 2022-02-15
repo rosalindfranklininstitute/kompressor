@@ -1,6 +1,6 @@
 numpy>=1.18.0
 scipy
-skimage
+scikit-image
 imageio
 h5py
 optax
