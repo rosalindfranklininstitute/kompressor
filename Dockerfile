@@ -38,6 +38,8 @@ RUN pip3 install --no-cache-dir --upgrade \
         jax jaxlib==0.1.76+cuda11.cudnn82 -f https://storage.googleapis.com/jax-releases/jax_releases.html && \
     pip3 install --no-cache-dir --upgrade \
         git+https://github.com/deepmind/dm-haiku && \
+    pip3 install --no-cache-dir --upgrade \
+        tensorflow-gpu tbp-nightly && \
     rm -rf /tmp/* && \
     find /usr/lib/python3.*/ -name 'tests' -exec rm -rf '{}' +
 
