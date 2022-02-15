@@ -20,31 +20,24 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-# Import the common encode decode pairs for handling individual maps
-from ..utils import \
-    encode_values_raw, decode_values_raw, \
-    encode_values_uint8, decode_values_uint8, \
-    encode_values_uint16, decode_values_uint16, \
-    encode_categorical, decode_categorical
+import io
+import imageio
+import numpy as np
+import jax
+import jax.numpy as jnp
 
-# Import the 2D image utility functions
-from .utils import \
-    targets_from_highres, lowres_from_highres, \
-    maps_from_predictions, maps_from_highres, \
-    highres_from_lowres_and_maps, \
-    features_from_lowres, pad_neighborhood
 
-from .losses import \
-    mean_squared_error, \
-    mean_abs_error, \
-    mean_charbonnier_error, \
-    mean_total_variation
+def imageio_rgb_bpp(batch, format='png'):
+    # Compute the image encoded bpp's for a batch of RGB images using imageio and a given file format
+    assert batch.ndim in [3, 4]
+    assert batch.shape[-1] == 3
 
-from .metrics import \
-    imageio_rgb_bpp
+    # Compute metric for a single RGB image
+    def bpp_fn(image):
+        with io.BytesIO() as stream:
+            imageio.imsave(stream, image, format=format)
+            # Normalize byte size to bits per pixel (24 bpp raw)
+            return np.float32((stream.tell() * 8) / np.prod(image.shape[:-1]))
 
-from .encode_decode import \
-    encode, decode
-
-from .encode_decode_chunk import \
-    encode_chunks, decode_chunks
+    # Return a scalar for single image input or array for batched inputs
+    return bpp_fn(batch) if (batch.ndim == 3) else np.array(list(map(bpp_fn, batch)))
