@@ -33,8 +33,7 @@ RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selectio
 
 # Install python packages
 RUN pip3 install --no-cache-dir --upgrade \
-        mock pytest pytest-cov PyYAML coverage \
-        tqdm numpy scipy h5py pandas matplotlib && \
+        mock pytest pytest-cov PyYAML coverage  && \
     pip3 install --no-cache-dir --upgrade \
         jax jaxlib==0.1.76+cuda11.cudnn82 -f https://storage.googleapis.com/jax-releases/jax_releases.html && \
     pip3 install --no-cache-dir --upgrade \

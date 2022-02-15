@@ -21,11 +21,16 @@
 # SOFTWARE.
 
 
+import os
 from setuptools import setup, find_packages
 
-# Attempt to import jax to test that it is already installed
+# Attempt to import jax, haiku, and tensorflow to test that it is already installed
 import jax
+import haiku
+import tensorflow
 
+with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'requirements.txt')) as fp:
+    install_requires = fp.read().splitlines()
 
 setup(
     version='1.0a',
@@ -46,7 +51,5 @@ setup(
     ],
     license='Apache License, Version 2.0',
     zip_safe=False,
-    install_requires=[
-        'numpy>=1.18.0'
-    ]
+    install_requires=install_requires,
 )

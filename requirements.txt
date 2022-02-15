@@ -1,0 +1,9 @@
+numpy>=1.18.0
+scipy
+skimage
+imageio
+h5py
+optax
+tqdm
+pandas
+matplotlib
