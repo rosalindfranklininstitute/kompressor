@@ -84,8 +84,8 @@ class ImageEncodeDecodeTest(unittest.TestCase):
 
                 # Make a prediction function for this test
                 predictions_fn = self.dummy_predictions_fn(padding=padding)
-                encode_fn = kom.image.encode_values_uint8
-                decode_fn = kom.image.decode_values_uint8
+                encode_fn = kom.mapping.uint8.encode_values
+                decode_fn = kom.mapping.uint8.decode_values
 
                 # Get a dummy highres image to encode + decode
                 highres = self.dummy_highres()
@@ -153,8 +153,8 @@ class ImageEncodeDecodeTest(unittest.TestCase):
 
                 # Make a prediction function for this test
                 predictions_fn = self.dummy_predictions_fn(padding=padding)
-                encode_fn = kom.image.encode_values_uint8
-                decode_fn = kom.image.decode_values_uint8
+                encode_fn = kom.mapping.uint8.encode_values
+                decode_fn = kom.mapping.uint8.decode_values
 
                 # Get a dummy highres image to encode + decode
                 highres = self.dummy_highres(shape=(2, 16, 16, 3))
@@ -189,8 +189,8 @@ class ImageEncodeDecodeTest(unittest.TestCase):
 
                 # Make a prediction function for this test
                 predictions_fn = self.dummy_predictions_categorical_fn(padding=padding, classes=256)
-                encode_fn = kom.image.encode_categorical
-                decode_fn = kom.image.decode_categorical
+                encode_fn = kom.mapping.categorical.encode_values
+                decode_fn = kom.mapping.categorical.decode_values
 
                 # Get a dummy highres image to encode + decode
                 highres = self.dummy_highres()
@@ -258,8 +258,8 @@ class ImageEncodeDecodeTest(unittest.TestCase):
 
                 # Make a prediction function for this test
                 predictions_fn = self.dummy_predictions_categorical_fn(padding=padding, classes=256)
-                encode_fn = kom.image.encode_categorical
-                decode_fn = kom.image.decode_categorical
+                encode_fn = kom.mapping.categorical.encode_values
+                decode_fn = kom.mapping.categorical.decode_values
 
                 # Get a dummy highres image to encode + decode
                 highres = self.dummy_highres(shape=(2, 16, 16, 3))
@@ -292,8 +292,8 @@ class ImageEncodeDecodeTest(unittest.TestCase):
 
         # Make a prediction function for this test
         predictions_fn = self.dummy_predictions_fn(padding=padding)
-        encode_fn = kom.image.encode_values_raw
-        decode_fn = kom.image.decode_values_raw
+        encode_fn = kom.mapping.raw.encode_values
+        decode_fn = kom.mapping.raw.decode_values
 
         # Get a dummy highres image to encode + decode
         highres = jnp.int32(self.dummy_highres())
@@ -370,8 +370,8 @@ class ImageEncodeDecodeTest(unittest.TestCase):
 
                 # Make a prediction function for this test
                 predictions_fn = self.dummy_predictions_fn(padding=padding)
-                encode_fn = kom.image.encode_values_uint8
-                decode_fn = kom.image.decode_values_uint8
+                encode_fn = kom.mapping.uint8.encode_values
+                decode_fn = kom.mapping.uint8.decode_values
 
                 # Get a dummy highres image to encode + decode
                 highres = self.dummy_highres()
@@ -430,8 +430,8 @@ class ImageEncodeDecodeTest(unittest.TestCase):
 
                 # Make a prediction function for this test
                 predictions_fn = self.dummy_predictions_fn(padding=padding)
-                encode_fn = kom.image.encode_values_uint8
-                decode_fn = kom.image.decode_values_uint8
+                encode_fn = kom.mapping.uint8.encode_values
+                decode_fn = kom.mapping.uint8.decode_values
 
                 # Get a dummy highres image to encode + decode
                 highres = self.dummy_highres(shape=(2, 16, 16, 3))
@@ -474,8 +474,8 @@ class ImageEncodeDecodeTest(unittest.TestCase):
 
                 # Make a prediction function for this test
                 predictions_fn = self.dummy_predictions_fn(padding=padding)
-                encode_fn = kom.image.encode_values_uint8
-                decode_fn = kom.image.decode_values_uint8
+                encode_fn = kom.mapping.uint8.encode_values
+                decode_fn = kom.mapping.uint8.decode_values
 
                 # Get a dummy highres image to encode + decode
                 highres = self.dummy_highres()
@@ -504,8 +504,8 @@ class ImageEncodeDecodeTest(unittest.TestCase):
 
                 # Make a prediction function for this test
                 predictions_fn = self.dummy_predictions_fn(padding=padding)
-                encode_fn = kom.image.encode_values_uint8
-                decode_fn = kom.image.decode_values_uint8
+                encode_fn = kom.mapping.uint8.encode_values
+                decode_fn = kom.mapping.uint8.decode_values
 
                 # Get a dummy highres image to encode + decode
                 highres = self.dummy_highres(shape=(2, 16, 16, 3))
@@ -540,8 +540,8 @@ class ImageEncodeDecodeTest(unittest.TestCase):
 
                 # Make a prediction function for this test
                 predictions_fn = self.dummy_predictions_categorical_fn(padding=padding, classes=256)
-                encode_fn = kom.image.encode_categorical
-                decode_fn = kom.image.decode_categorical
+                encode_fn = kom.mapping.categorical.encode_values
+                decode_fn = kom.mapping.categorical.decode_values
 
                 # Get a dummy highres image to encode + decode
                 highres = self.dummy_highres()
@@ -601,8 +601,8 @@ class ImageEncodeDecodeTest(unittest.TestCase):
 
                 # Make a prediction function for this test
                 predictions_fn = self.dummy_predictions_categorical_fn(padding=padding, classes=256)
-                encode_fn = kom.image.encode_categorical
-                decode_fn = kom.image.decode_categorical
+                encode_fn = kom.mapping.categorical.encode_values
+                decode_fn = kom.mapping.categorical.decode_values
 
                 # Get a dummy highres image to encode + decode
                 highres = self.dummy_highres(shape=(2, 16, 16, 3))
@@ -646,8 +646,8 @@ class ImageEncodeDecodeTest(unittest.TestCase):
 
                 # Make a prediction function for this test
                 predictions_fn = self.dummy_predictions_categorical_fn(padding=padding, classes=256)
-                encode_fn = kom.image.encode_categorical
-                decode_fn = kom.image.decode_categorical
+                encode_fn = kom.mapping.categorical.encode_values
+                decode_fn = kom.mapping.categorical.decode_values
 
                 # Get a dummy highres image to encode + decode
                 highres = self.dummy_highres()
@@ -676,8 +676,8 @@ class ImageEncodeDecodeTest(unittest.TestCase):
 
                 # Make a prediction function for this test
                 predictions_fn = self.dummy_predictions_categorical_fn(padding=padding, classes=256)
-                encode_fn = kom.image.encode_categorical
-                decode_fn = kom.image.decode_categorical
+                encode_fn = kom.mapping.categorical.encode_values
+                decode_fn = kom.mapping.categorical.decode_values
 
                 # Get a dummy highres image to encode + decode
                 highres = self.dummy_highres(shape=(2, 16, 16, 3))

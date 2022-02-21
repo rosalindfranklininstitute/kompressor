@@ -85,8 +85,8 @@ class VolumeEncodeDecodeTest(unittest.TestCase):
 
                 # Make a prediction function for this test
                 predictions_fn = self.dummy_predictions_fn(padding=padding)
-                encode_fn = kom.volume.encode_values_uint16
-                decode_fn = kom.volume.decode_values_uint16
+                encode_fn = kom.mapping.uint16.encode_values
+                decode_fn = kom.mapping.uint16.decode_values
 
                 # Get a dummy highres volume to encode + decode
                 highres = self.dummy_highres()
@@ -189,8 +189,8 @@ class VolumeEncodeDecodeTest(unittest.TestCase):
 
                 # Make a prediction function for this test
                 predictions_fn = self.dummy_predictions_fn(padding=padding)
-                encode_fn = kom.volume.encode_values_uint16
-                decode_fn = kom.volume.decode_values_uint16
+                encode_fn = kom.mapping.uint16.encode_values
+                decode_fn = kom.mapping.uint16.decode_values
 
                 # Get a dummy highres volume to encode + decode
                 highres = self.dummy_highres(shape=(2, 16, 16, 16, 1))
@@ -226,8 +226,8 @@ class VolumeEncodeDecodeTest(unittest.TestCase):
 
                 # Make a prediction function for this test
                 predictions_fn = self.dummy_predictions_categorical_fn(padding=padding, classes=256)
-                encode_fn = kom.volume.encode_categorical
-                decode_fn = kom.volume.decode_categorical
+                encode_fn = kom.mapping.categorical.encode_values
+                decode_fn = kom.mapping.categorical.decode_values
 
                 # Get a dummy highres volume to encode + decode
                 highres = self.dummy_highres(max_value=256, dtype=jnp.uint8)
@@ -330,8 +330,8 @@ class VolumeEncodeDecodeTest(unittest.TestCase):
 
                 # Make a prediction function for this test
                 predictions_fn = self.dummy_predictions_categorical_fn(padding=padding, classes=256)
-                encode_fn = kom.volume.encode_categorical
-                decode_fn = kom.volume.decode_categorical
+                encode_fn = kom.mapping.categorical.encode_values
+                decode_fn = kom.mapping.categorical.decode_values
 
                 # Get a dummy highres volume to encode + decode
                 highres = self.dummy_highres(shape=(2, 16, 16, 16, 1), max_value=256, dtype=jnp.uint8)
@@ -365,8 +365,8 @@ class VolumeEncodeDecodeTest(unittest.TestCase):
 
         # Make a prediction function for this test
         predictions_fn = self.dummy_predictions_fn(padding=padding)
-        encode_fn = kom.volume.encode_values_raw
-        decode_fn = kom.volume.decode_values_raw
+        encode_fn = kom.mapping.raw.encode_values
+        decode_fn = kom.mapping.raw.decode_values
 
         # Get a dummy highres volume to encode + decode
         highres = jnp.int32(self.dummy_highres())
@@ -478,8 +478,8 @@ class VolumeEncodeDecodeTest(unittest.TestCase):
 
                 # Make a prediction function for this test
                 predictions_fn = self.dummy_predictions_fn(padding=padding)
-                encode_fn = kom.volume.encode_values_uint16
-                decode_fn = kom.volume.decode_values_uint16
+                encode_fn = kom.mapping.uint16.encode_values
+                decode_fn = kom.mapping.uint16.decode_values
 
                 # Get a dummy highres volume to encode + decode
                 highres = self.dummy_highres()
@@ -557,8 +557,8 @@ class VolumeEncodeDecodeTest(unittest.TestCase):
 
                 # Make a prediction function for this test
                 predictions_fn = self.dummy_predictions_fn(padding=padding)
-                encode_fn = kom.volume.encode_values_uint16
-                decode_fn = kom.volume.decode_values_uint16
+                encode_fn = kom.mapping.uint16.encode_values
+                decode_fn = kom.mapping.uint16.decode_values
 
                 # Get a dummy highres volume to encode + decode
                 highres = self.dummy_highres(shape=(2, 16, 16, 16, 1))
@@ -602,8 +602,8 @@ class VolumeEncodeDecodeTest(unittest.TestCase):
 
                 # Make a prediction function for this test
                 predictions_fn = self.dummy_predictions_fn(padding=padding)
-                encode_fn = kom.volume.encode_values_uint16
-                decode_fn = kom.volume.decode_values_uint16
+                encode_fn = kom.mapping.uint16.encode_values
+                decode_fn = kom.mapping.uint16.decode_values
 
                 # Get a dummy highres volume to encode + decode
                 highres = self.dummy_highres()
@@ -631,8 +631,8 @@ class VolumeEncodeDecodeTest(unittest.TestCase):
 
                 # Make a prediction function for this test
                 predictions_fn = self.dummy_predictions_fn(padding=padding)
-                encode_fn = kom.volume.encode_values_uint16
-                decode_fn = kom.volume.decode_values_uint16
+                encode_fn = kom.mapping.uint16.encode_values
+                decode_fn = kom.mapping.uint16.decode_values
 
                 # Get a dummy highres volume to encode + decode
                 highres = self.dummy_highres(shape=(2, 16, 16, 16, 1))
@@ -667,8 +667,8 @@ class VolumeEncodeDecodeTest(unittest.TestCase):
 
                 # Make a prediction function for this test
                 predictions_fn = self.dummy_predictions_categorical_fn(padding=padding, classes=256)
-                encode_fn = kom.volume.encode_categorical
-                decode_fn = kom.volume.decode_categorical
+                encode_fn = kom.mapping.categorical.encode_values
+                decode_fn = kom.mapping.categorical.decode_values
 
                 # Get a dummy highres volume to encode + decode
                 highres = self.dummy_highres(max_value=256, dtype=jnp.uint8)
@@ -745,8 +745,8 @@ class VolumeEncodeDecodeTest(unittest.TestCase):
 
                 # Make a prediction function for this test
                 predictions_fn = self.dummy_predictions_categorical_fn(padding=padding, classes=256)
-                encode_fn = kom.volume.encode_categorical
-                decode_fn = kom.volume.decode_categorical
+                encode_fn = kom.mapping.categorical.encode_values
+                decode_fn = kom.mapping.categorical.decode_values
 
                 # Get a dummy highres volume to encode + decode
                 highres = self.dummy_highres(shape=(2, 16, 16, 16, 1), max_value=256, dtype=jnp.uint8)
@@ -791,8 +791,8 @@ class VolumeEncodeDecodeTest(unittest.TestCase):
 
                 # Make a prediction function for this test
                 predictions_fn = self.dummy_predictions_categorical_fn(padding=padding, classes=256)
-                encode_fn = kom.volume.encode_categorical
-                decode_fn = kom.volume.decode_categorical
+                encode_fn = kom.mapping.categorical.encode_values
+                decode_fn = kom.mapping.categorical.decode_values
 
                 # Get a dummy highres volume to encode + decode
                 highres = self.dummy_highres(max_value=256, dtype=jnp.uint8)
@@ -820,8 +820,8 @@ class VolumeEncodeDecodeTest(unittest.TestCase):
 
                 # Make a prediction function for this test
                 predictions_fn = self.dummy_predictions_categorical_fn(padding=padding, classes=256)
-                encode_fn = kom.volume.encode_categorical
-                decode_fn = kom.volume.decode_categorical
+                encode_fn = kom.mapping.categorical.encode_values
+                decode_fn = kom.mapping.categorical.decode_values
 
                 # Get a dummy highres volume to encode + decode
                 highres = self.dummy_highres(shape=(2, 16, 16, 16, 1), max_value=256, dtype=jnp.uint8)
