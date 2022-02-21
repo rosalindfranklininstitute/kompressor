@@ -37,12 +37,45 @@ def decode_values_raw(pred, encoded):
 
 @jax.jit
 def encode_values_uint8(pred, gt):
+    # Encode predictions in [0, +256) to deltas in [-256, +256) to encoded values in [0, +256)
+    # Leads to peaks at 0 and +255
     return jnp.uint8(((jnp.int32(gt) - jnp.int32(pred)) + 256) % 256)
-
 
 @jax.jit
 def decode_values_uint8(pred, encoded):
+    # Decode twin peaks distribution
     return jnp.uint8(((jnp.int32(pred) + jnp.int32(encoded)) + 256) % 256)
+
+
+@jax.jit
+def encode_transform_interleaved_uint8(input):
+    # Take twin peaks at 0 and +255 and shift them to be a single peak centered around 0 in [-128, +128)
+    # Encode positive values a strided by 1, and negatives values interleaved between them in [0, +256)
+    encoded = ((jnp.int32(input) + 128) % 256) - 128
+    encoded = jnp.where((encoded >= 0), (encoded * 2), ((encoded + 1) * -2) + 1)
+    return jnp.uint8(encoded)
+
+
+@jax.jit
+def decode_transform_interleaved_uint8(encoded):
+    # Decode interleaved in [0, +256) to [-128, +128) to [0, 256+)
+    # Positive values strided by 1, and negatives values interleaved between them
+    # Leads to peaks at 0 and +255
+    encoded = jnp.int32(encoded)
+    encoded = jnp.where((encoded % 2 == 0), (encoded // 2), -(((encoded - 1) // 2) + 1))
+    return jnp.uint8((encoded + 256) % 256)
+
+
+@jax.jit
+def encode_transform_centre_uint8(input):
+    # Take twin peaks at 0 and +255 and shift them to be a single peak centered around +128 in [0, +256)
+    return jnp.uint8((jnp.int32(input) + 128) % 256)
+
+
+@jax.jit
+def decode_transform_centre_uint8(encoded):
+    # Decode single peak at +128 into twin peaks at 0 and +255 in [0, +256)
+    return jnp.uint8((jnp.int32(encoded) + 128) % 256)
 
 
 @jax.jit
@@ -53,6 +86,30 @@ def encode_values_uint16(pred, gt):
 @jax.jit
 def decode_values_uint16(pred, encoded):
     return jnp.uint16(((jnp.int32(pred) + jnp.int32(encoded)) + 65536) % 65536)
+
+
+@jax.jit
+def encode_transform_interleaved_uint16(input):
+    encoded = ((jnp.int32(input) + 32768) % 65536) - 32768
+    encoded = jnp.where((encoded >= 0), (encoded * 2), ((encoded + 1) * -2) + 1)
+    return jnp.uint16(encoded)
+
+
+@jax.jit
+def decode_transform_interleaved_uint16(encoded):
+    encoded = jnp.int32(encoded)
+    encoded = jnp.where((encoded % 2 == 0), (encoded // 2), -(((encoded - 1) // 2) + 1))
+    return jnp.uint16((encoded + 65536) % 65536)
+
+
+@jax.jit
+def encode_transform_centre_uint16(input):
+    return jnp.uint16((jnp.int32(input) + 32768) % 65536)
+
+
+@jax.jit
+def decode_transform_centre_uint16(encoded):
+    return jnp.uint16((jnp.int32(encoded) + 32768) % 65536)
 
 
 @jax.jit
