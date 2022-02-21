@@ -20,6 +20,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+from functools import partial
 import io
 import imageio
 import numpy as np
@@ -41,3 +42,23 @@ def imageio_rgb_bpp(batch, *imageio_args, **imageio_kargs):
 
     # Return a scalar for single image input or array for batched inputs
     return bpp_fn(batch) if (batch.ndim == 3) else np.array(list(map(bpp_fn, batch)))
+
+
+@partial(jax.jit, static_argnums=1)
+def within_k(batch, k):
+    # Compute the percentage of pixels that fall within [-k, +k] of the target
+    assert batch.ndim >= 3
+    assert 0 < k
+
+    delta = jnp.abs(jnp.float32(batch))
+    delta = jnp.reshape(delta, (batch.shape[0], -1))
+    return jnp.sum((delta <= k), axis=-1) / delta.shape[-1]
+
+
+@jax.jit
+def mean_run_length(batch):
+    # Compute percentage of the image that is spent in constant valued run lengths
+    assert batch.ndim >= 3
+    delta = jnp.reshape(batch, (batch.shape[0], -1))
+    return jnp.mean(jnp.diff(delta, axis=-1) == 0, axis=-1)
+
