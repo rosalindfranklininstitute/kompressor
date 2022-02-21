@@ -27,7 +27,7 @@ import jax
 import jax.numpy as jnp
 
 
-def imageio_rgb_bpp(batch, format='png'):
+def imageio_rgb_bpp(batch, *imageio_args, **imageio_kargs):
     # Compute the image encoded bpp's for a batch of RGB images using imageio and a given file format
     assert batch.ndim in [3, 4]
     assert batch.shape[-1] == 3
@@ -35,7 +35,7 @@ def imageio_rgb_bpp(batch, format='png'):
     # Compute metric for a single RGB image
     def bpp_fn(image):
         with io.BytesIO() as stream:
-            imageio.imsave(stream, image, format=format)
+            imageio.imwrite(stream, image, *imageio_args, **imageio_kargs)
             # Normalize byte size to bits per pixel (24 bpp raw)
             return np.float32((stream.tell() * 8) / np.prod(image.shape[:-1]))
 
