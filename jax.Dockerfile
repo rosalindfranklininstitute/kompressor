@@ -23,6 +23,9 @@
 
 FROM nvidia/cuda:11.5.1-cudnn8-devel-ubuntu20.04
 
+# Update LD_LIBRARY_PATH
+ENV LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:/usr/local/cuda/lib64:/usr/local/cuda/compat/"
+
 # Install packages and register python3 as python
 RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections && \
     apt-get update -y && apt-get install --no-install-recommends -y dialog apt-utils && \
@@ -35,6 +38,7 @@ RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selectio
 RUN pip install --no-cache-dir --upgrade \
         numpy six wheel mock pytest pytest-cov PyYAML coverage
 
+# Install jax from source
 WORKDIR /usr/local/jax
 RUN git clone --branch jax-v0.3.1 --depth 1 https://github.com/google/jax.git . && \
     python build/build.py  \
