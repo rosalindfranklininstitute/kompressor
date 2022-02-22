@@ -21,7 +21,7 @@
 # SOFTWARE.
 
 
-FROM nvidia/cuda:11.1-cudnn8-devel-ubuntu20.04
+FROM nvidia/cuda:11.5.1-cudnn8-devel-ubuntu20.04
 
 # Install packages and register python3 as python
 RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections && \
@@ -32,15 +32,20 @@ RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selectio
     apt-get autoremove -y --purge && apt-get clean -y && rm -rf /var/lib/apt/lists/*
 
 # Install python packages
-RUN pip3 install --no-cache-dir --upgrade \
-        mock pytest pytest-cov PyYAML coverage  && \
-    pip3 install --no-cache-dir --upgrade \
-        jax jaxlib==0.1.76+cuda11.cudnn82 -f https://storage.googleapis.com/jax-releases/jax_releases.html && \
-    pip3 install --no-cache-dir --upgrade \
+RUN pip install --no-cache-dir --upgrade \
+        six wheel mock pytest pytest-cov PyYAML coverage \
+
+WORKDIR /usr/local/jax
+RUN git clone --branch jax-v0.3.1 --depth 1 git@github.com:google/jax.git . && \
+    python build/build.py --enable_cuda && \
+    pip install --no-cache-dir --upgrade dist/*.whl && \
+    pip install -e .
+
+RUN pip install --no-cache-dir --upgrade \
         git+https://github.com/deepmind/dm-haiku && \
-    pip3 install --no-cache-dir --upgrade \
+    pip install --no-cache-dir --upgrade \
         tensorflow tbp-nightly && \
-    pip3 install --no-cache-dir --upgrade \
+    pip install --no-cache-dir --upgrade \
         jupyter jupyterlab && \
     rm -rf /tmp/* && \
     find /usr/lib/python3.*/ -name 'tests' -exec rm -rf '{}' +
@@ -48,6 +53,6 @@ RUN pip3 install --no-cache-dir --upgrade \
 # Install Kompressor
 ADD . /usr/local/kompressor
 WORKDIR /usr/local/kompressor
-RUN pip3 install -e . && \
+RUN pip install -e . && \
     rm -rf /tmp/* && \
     find /usr/lib/python3.*/ -name 'tests' -exec rm -rf '{}' +
