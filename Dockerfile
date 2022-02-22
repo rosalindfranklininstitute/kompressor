@@ -39,9 +39,9 @@ WORKDIR /usr/local/jax
 RUN git clone --branch jax-v0.3.1 --depth 1 git@github.com:google/jax.git . && \
     python build/build.py  \
         --enable_cuda \
-        --cuda_path='/usr/local/cuda' ` \
-        --cudnn_path='/usr' ` \
-        --cuda_version='11.5.1' ` \
+        --cuda_path='/usr/local/cuda' \
+        --cudnn_path='/usr' \
+        --cuda_version='11.5.1' \
         --cudnn_version='8.0.5' && \
     pip install --no-cache-dir --upgrade dist/*.whl && \
     pip install -e .
