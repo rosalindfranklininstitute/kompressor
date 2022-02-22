@@ -25,7 +25,7 @@ FROM nvidia/cuda:11.5.1-cudnn8-devel-ubuntu20.04
 
 # Install packages and register python3 as python
 RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections && \
-    apt-get update -y && apt-get install -no-install-recommends -y dialog apt-utils && \
+    apt-get update -y && apt-get install --no-install-recommends -y dialog apt-utils && \
     apt-get install --no-install-recommends -y build-essential git wget python3 python3-pip && \
     update-alternatives --install /usr/bin/python python /usr/bin/python3 10 && \
     update-alternatives --install /usr/bin/pip pip /usr/bin/pip3 10 && \
