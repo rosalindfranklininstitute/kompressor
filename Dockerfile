@@ -36,28 +36,29 @@ RUN pip install --no-cache-dir --upgrade \
         numpy six wheel mock pytest pytest-cov PyYAML coverage
 
 WORKDIR /usr/local/jax
-RUN git clone --branch jax-v0.3.1 --depth 1 https://github.com/google/jax.git . && \
-    python build/build.py  \
-        --enable_cuda \
-        --cuda_path='/usr/local/cuda' \
-        --cudnn_path='/usr' \
-        --cuda_version='11.5.1' \
-        --cudnn_version='8.0.5' && \
-    pip install --no-cache-dir --upgrade dist/*.whl && \
-    pip install -e .
-
-RUN pip install --no-cache-dir --upgrade \
-        git+https://github.com/deepmind/dm-haiku && \
-    pip install --no-cache-dir --upgrade \
-        tensorflow tbp-nightly && \
-    pip install --no-cache-dir --upgrade \
-        jupyter jupyterlab && \
-    rm -rf /tmp/* && \
-    find /usr/lib/python3.*/ -name 'tests' -exec rm -rf '{}' +
-
-# Install Kompressor
-ADD . /usr/local/kompressor
-WORKDIR /usr/local/kompressor
-RUN pip install -e . && \
-    rm -rf /tmp/* && \
-    find /usr/lib/python3.*/ -name 'tests' -exec rm -rf '{}' +
+RUN git clone --branch jax-v0.3.1 --depth 1 https://github.com/google/jax.git .
+#&& \
+#    python build/build.py  \
+#        --enable_cuda \
+#        --cuda_path='/usr/local/cuda' \
+#        --cudnn_path='/usr' \
+#        --cuda_version='11.5.1' \
+#        --cudnn_version='8.0.5' && \
+#    pip install --no-cache-dir --upgrade dist/*.whl && \
+#    pip install -e .
+#
+#RUN pip install --no-cache-dir --upgrade \
+#        git+https://github.com/deepmind/dm-haiku && \
+#    pip install --no-cache-dir --upgrade \
+#        tensorflow tbp-nightly && \
+#    pip install --no-cache-dir --upgrade \
+#        jupyter jupyterlab && \
+#    rm -rf /tmp/* && \
+#    find /usr/lib/python3.*/ -name 'tests' -exec rm -rf '{}' +
+#
+## Install Kompressor
+#ADD . /usr/local/kompressor
+#WORKDIR /usr/local/kompressor
+#RUN pip install -e . && \
+#    rm -rf /tmp/* && \
+#    find /usr/lib/python3.*/ -name 'tests' -exec rm -rf '{}' +
