@@ -25,7 +25,7 @@ FROM nvidia/cuda:11.5.1-cudnn8-devel-ubuntu20.04
 
 # Install packages and register python3 as python
 RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections && \
-    apt-get update -y && apt-get install -y dialog apt-utils && \
+    apt-get update -y && apt-get install -no-install-recommends -y dialog apt-utils && \
     apt-get install --no-install-recommends -y build-essential git wget python3 python3-pip && \
     update-alternatives --install /usr/bin/python python /usr/bin/python3 10 && \
     update-alternatives --install /usr/bin/pip pip /usr/bin/pip3 10 && \
@@ -33,11 +33,16 @@ RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selectio
 
 # Install python packages
 RUN pip install --no-cache-dir --upgrade \
-        six wheel mock pytest pytest-cov PyYAML coverage \
+        numpy six wheel mock pytest pytest-cov PyYAML coverage
 
 WORKDIR /usr/local/jax
 RUN git clone --branch jax-v0.3.1 --depth 1 git@github.com:google/jax.git . && \
-    python build/build.py --enable_cuda && \
+    python build/build.py  \
+        --enable_cuda \
+        --cuda_path='/usr/local/cuda' ` \
+        --cudnn_path='/usr' ` \
+        --cuda_version='11.5.1' ` \
+        --cudnn_version='8.0.5' && \
     pip install --no-cache-dir --upgrade dist/*.whl && \
     pip install -e .
 
