@@ -36,7 +36,7 @@ RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selectio
 
 # Install python packages
 RUN pip install --no-cache-dir --upgrade \
-        numpy>=1.22.2 six wheel mock pytest pytest-cov PyYAML coverage
+    numpy>=1.22.2 six wheel mock pytest pytest-cov PyYAML coverage
 
 # Install jax from source
 WORKDIR /usr/local/jax
