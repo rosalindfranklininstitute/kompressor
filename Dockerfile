@@ -32,6 +32,12 @@ RUN pip install --no-cache-dir --upgrade \
     rm -rf /tmp/* && \
     find /usr/lib/python3.*/ -name 'tests' -exec rm -rf '{}' +
 
+# Install Kompressor dependencies to enable caching
+ADD requirements.txt /tmp/requirements.txt
+RUN pip install --no-cache-dir --upgrade -r /tmp/requirements.txt && \
+    rm -rf /tmp/* && \
+    find /usr/lib/python3.*/ -name 'tests' -exec rm -rf '{}' +
+
 # Install Kompressor
 ADD . /usr/local/kompressor
 WORKDIR /usr/local/kompressor
