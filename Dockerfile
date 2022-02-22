@@ -36,7 +36,7 @@ RUN pip install --no-cache-dir --upgrade \
         numpy six wheel mock pytest pytest-cov PyYAML coverage
 
 WORKDIR /usr/local/jax
-RUN git clone --branch jax-v0.3.1 --depth 1 git@github.com:google/jax.git . && \
+RUN git clone --branch jax-v0.3.1 --depth 1 https://github.com/google/jax.git . && \
     python build/build.py  \
         --enable_cuda \
         --cuda_path='/usr/local/cuda' \
