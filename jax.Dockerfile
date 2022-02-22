@@ -48,4 +48,6 @@ RUN git clone --branch jax-v0.3.1 --depth 1 https://github.com/google/jax.git . 
         --cuda_version='11.5' \
         --cudnn_version='8' && \
     pip install --no-cache-dir --upgrade dist/*.whl && \
-    pip install -e .
+    rm -rf dist/*.whl && \
+    pip install -e . && \
+    rm -rf /root/.cache/*
