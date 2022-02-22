@@ -21,44 +21,20 @@
 # SOFTWARE.
 
 
-FROM nvidia/cuda:11.5.1-cudnn8-devel-ubuntu20.04
+FROM quay.io/rosalindfranklininstitute/jax:v0.3.1
 
-# Install packages and register python3 as python
-RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections && \
-    apt-get update -y && apt-get install --no-install-recommends -y dialog apt-utils && \
-    apt-get install --no-install-recommends -y g++ git wget python cython3 python3 python3-dev python3-pip python3-numpy python3-scipy && \
-    update-alternatives --install /usr/bin/python python /usr/bin/python3 10 && \
-    update-alternatives --install /usr/bin/pip pip /usr/bin/pip3 10 && \
-    apt-get autoremove -y --purge && apt-get clean -y && rm -rf /var/lib/apt/lists/*
-
-# Install python packages
 RUN pip install --no-cache-dir --upgrade \
-        numpy six wheel mock pytest pytest-cov PyYAML coverage
+        git+https://github.com/deepmind/dm-haiku && \
+    pip install --no-cache-dir --upgrade \
+        tensorflow tbp-nightly && \
+    pip install --no-cache-dir --upgrade \
+        jupyter jupyterlab && \
+    rm -rf /tmp/* && \
+    find /usr/lib/python3.*/ -name 'tests' -exec rm -rf '{}' +
 
-WORKDIR /usr/local/jax
-RUN git clone --branch jax-v0.3.1 --depth 1 https://github.com/google/jax.git .
-#&& \
-#    python build/build.py  \
-#        --enable_cuda \
-#        --cuda_path='/usr/local/cuda' \
-#        --cudnn_path='/usr' \
-#        --cuda_version='11.5.1' \
-#        --cudnn_version='8.0.5' && \
-#    pip install --no-cache-dir --upgrade dist/*.whl && \
-#    pip install -e .
-#
-#RUN pip install --no-cache-dir --upgrade \
-#        git+https://github.com/deepmind/dm-haiku && \
-#    pip install --no-cache-dir --upgrade \
-#        tensorflow tbp-nightly && \
-#    pip install --no-cache-dir --upgrade \
-#        jupyter jupyterlab && \
-#    rm -rf /tmp/* && \
-#    find /usr/lib/python3.*/ -name 'tests' -exec rm -rf '{}' +
-#
-## Install Kompressor
-#ADD . /usr/local/kompressor
-#WORKDIR /usr/local/kompressor
-#RUN pip install -e . && \
-#    rm -rf /tmp/* && \
-#    find /usr/lib/python3.*/ -name 'tests' -exec rm -rf '{}' +
+# Install Kompressor
+ADD . /usr/local/kompressor
+WORKDIR /usr/local/kompressor
+RUN pip install -e . && \
+    rm -rf /tmp/* && \
+    find /usr/lib/python3.*/ -name 'tests' -exec rm -rf '{}' +
