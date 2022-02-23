@@ -38,11 +38,10 @@ def transform_extract_level_from_highres(level):
         highres = highres[::skip, ::skip]
 
         # Determine the size of the input and the padding to apply
-        hh, hw = highres.shape[:2]
-        ph, pw = (hh + 1) % 2, (hw + 1) % 2
+        ph, pw = (tf.shape(highres)[0] + 1) % 2, (tf.shape(highres)[1] + 1) % 2
 
         # Pad highres using reflect to match lowres padded with symmetric
-        data_padding = ((0, 0),) * len(highres.shape[2:])
+        data_padding = ((0, 0),) * (tf.rank(highres) - 2)
         return tf.pad(highres, ((0, ph), (0, pw), *data_padding), mode='REFLECT')
 
     return fn
@@ -71,7 +70,7 @@ def transform_lowres_and_targets_from_highres(padding):
 
         # Pad only the 2 spatial dimensions
         spatial_padding = ((padding, padding),) * 2
-        data_padding = ((0, 0),) * len(lowres.shape[3:])
+        data_padding = ((0, 0),) * (tf.rank(lowres) - 3)
         lowres = tf.pad(lowres, ((0, 0), *spatial_padding, *data_padding), mode='SYMMETRIC')
 
         # Slice out each value of the pluses
