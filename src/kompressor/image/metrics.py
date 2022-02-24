@@ -45,14 +45,14 @@ def imageio_rgb_bpp(batch, *imageio_args, **imageio_kargs):
 
 
 @partial(jax.jit, static_argnums=1)
-def within_k(batch, k):
+def mean_within_k(batch, k):
     # Compute the percentage of pixels that fall within [-k, +k] of the target
     assert batch.ndim >= 3
     assert 0 < k
 
     delta = jnp.abs(jnp.float32(batch))
     delta = jnp.reshape(delta, (batch.shape[0], -1))
-    return jnp.sum((delta <= k), axis=-1) / delta.shape[-1]
+    return jnp.mean((delta <= k), axis=-1)
 
 
 @jax.jit
