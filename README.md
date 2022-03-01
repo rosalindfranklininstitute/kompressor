@@ -4,7 +4,7 @@
 
 | Branch  | CI | Coverage |
 |:-:|:-:|:-:|
-| `pr-adjust-readme-usage` (active) | [![Build](https://github.com/rosalindfranklininstitute/kompressor/actions/workflows/ci.yml/badge.svg?branch=pr-adjust-readme-usage)](https://github.com/rosalindfranklininstitute/kompressor/actions/workflows/ci.yml) | [![codecov](https://codecov.io/gh/rosalindfranklininstitute/kompressor/branch/pr-adjust-readme-usage/graph/badge.svg?token=nJk2eue86w)](https://codecov.io/gh/rosalindfranklininstitute/kompressor) |
+| `development` (active) | [![Build](https://github.com/rosalindfranklininstitute/kompressor/actions/workflows/ci.yml/badge.svg?branch=development)](https://github.com/rosalindfranklininstitute/kompressor/actions/workflows/ci.yml) | [![codecov](https://codecov.io/gh/rosalindfranklininstitute/kompressor/branch/development/graph/badge.svg?token=nJk2eue86w)](https://codecov.io/gh/rosalindfranklininstitute/kompressor) |
 | `main` | [![Build](https://github.com/rosalindfranklininstitute/kompressor/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/rosalindfranklininstitute/kompressor/actions/workflows/ci.yml) | [![codecov](https://codecov.io/gh/rosalindfranklininstitute/kompressor/branch/main/graph/badge.svg?token=nJk2eue86w)](https://codecov.io/gh/rosalindfranklininstitute/kompressor) |
 | `development`  | [![Build](https://github.com/rosalindfranklininstitute/kompressor/actions/workflows/ci.yml/badge.svg?branch=development)](https://github.com/rosalindfranklininstitute/kompressor/actions/workflows/ci.yml) | [![codecov](https://codecov.io/gh/rosalindfranklininstitute/kompressor/branch/development/graph/badge.svg?token=nJk2eue86w)](https://codecov.io/gh/rosalindfranklininstitute/kompressor) |
 
