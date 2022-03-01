@@ -20,6 +20,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+from functools import partial
 import io
 import imageio
 import numpy as np
@@ -27,7 +28,7 @@ import jax
 import jax.numpy as jnp
 
 
-def imageio_rgb_bpp(batch, format='png'):
+def imageio_rgb_bpp(batch, *imageio_args, **imageio_kargs):
     # Compute the image encoded bpp's for a batch of RGB images using imageio and a given file format
     assert batch.ndim in [3, 4]
     assert batch.shape[-1] == 3
@@ -35,9 +36,30 @@ def imageio_rgb_bpp(batch, format='png'):
     # Compute metric for a single RGB image
     def bpp_fn(image):
         with io.BytesIO() as stream:
-            imageio.imsave(stream, image, format=format)
+            imageio.imwrite(stream, image, *imageio_args, **imageio_kargs)
             # Normalize byte size to bits per pixel (24 bpp raw)
             return np.float32((stream.tell() * 8) / np.prod(image.shape[:-1]))
 
     # Return a scalar for single image input or array for batched inputs
     return bpp_fn(batch) if (batch.ndim == 3) else np.array(list(map(bpp_fn, batch)))
+
+
+@partial(jax.jit, static_argnums=1)
+def mean_within_k(batch, k):
+    # Compute the percentage of pixels that fall within [-k, +k] of the target
+    assert batch.ndim >= 3
+    assert 0 < k
+
+    delta = jnp.abs(jnp.float32(batch))
+    delta = jnp.reshape(delta, (batch.shape[0], -1))
+    return jnp.mean((delta <= k), axis=-1)
+
+
+@jax.jit
+def mean_run_length(batch):
+    # Compute percentage of the image that is spent in constant valued run lengths
+    assert batch.ndim >= 3
+    delta = jnp.transpose(batch, (0, *range(3, batch.ndim), 1, 2))
+    delta = jnp.reshape(delta, (batch.shape[0], -1))
+    return jnp.mean(jnp.diff(delta, axis=-1) == 0, axis=-1)
+

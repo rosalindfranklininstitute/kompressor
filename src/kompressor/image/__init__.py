@@ -20,12 +20,6 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-# Import the common encode decode pairs for handling individual maps
-from ..utils import \
-    encode_values_raw, decode_values_raw, \
-    encode_values_uint8, decode_values_uint8, \
-    encode_values_uint16, decode_values_uint16, \
-    encode_categorical, decode_categorical
 
 # Import the 2D image utility functions
 from .utils import \
@@ -34,17 +28,15 @@ from .utils import \
     highres_from_lowres_and_maps, \
     features_from_lowres, pad_neighborhood
 
-from .losses import \
-    mean_squared_error, \
-    mean_abs_error, \
-    mean_charbonnier_error, \
-    mean_total_variation
-
-from .metrics import \
-    imageio_rgb_bpp
+from . import \
+    losses, \
+    metrics, \
+    data
 
 from .encode_decode import \
-    encode, decode
+    encode, \
+    decode
 
 from .encode_decode_chunk import \
-    encode_chunks, decode_chunks
+    encode_chunks, \
+    decode_chunks

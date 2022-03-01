@@ -21,6 +21,6 @@
 # SOFTWARE.
 
 
-from kompressor import image, volume
+from kompressor import image, volume, mapping, utils
 
 VERSION = 'v1.0a'
