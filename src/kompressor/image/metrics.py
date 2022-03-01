@@ -59,6 +59,7 @@ def mean_within_k(batch, k):
 def mean_run_length(batch):
     # Compute percentage of the image that is spent in constant valued run lengths
     assert batch.ndim >= 3
-    delta = jnp.reshape(batch, (batch.shape[0], -1))
+    delta = jnp.transpose(batch, (0, *range(3, batch.ndim), 1, 2))
+    delta = jnp.reshape(delta, (batch.shape[0], -1))
     return jnp.mean(jnp.diff(delta, axis=-1) == 0, axis=-1)
 
