@@ -1,8 +1,25 @@
 import argparse
+import os
+import datetime
+import tensorflow as tf
+tf.config.set_visible_devices([], 'GPU')
+import kompressor as kom
+from glob import glob
+import models
 from callbacks.metrics import MetricsCallback
-from kompressors.haiku import HaikuKompressor
-from models import mlp, cnn
-from predictors import regression
+import compressors
+import predictors
+
+
+def decode_png_fn(path):
+    return tf.io.decode_png(tf.io.read_file(path))
+
+
+def dir_path(string):
+    if os.path.isdir(string):
+        return string
+    else:
+        raise NotADirectoryError(string)
 
 
 def __option_parser():
@@ -11,5 +28,83 @@ def __option_parser():
     """
     parser = argparse.ArgumentParser(description="Setup training")
     parser.add_argument(
-        "-l", "--level", type=int, default=1, help=""
+        "-l",
+        "--levels",
+        type=int,
+        default=1,
+        help="Select the number of resolutions to train the model over",
     )
+    parser.add_argument(
+        "-p",
+        "--padding",
+        type=int,
+        default=1,
+        help="Select neighbourhood size for prediction model",
+    )
+    parser.add_argument(
+        "-k",
+        "--kompressor",
+        type=str,
+        default="haiku",
+        help="Select kompressor (haiku | )",
+    )
+    parser.add_argument(
+        "-m",
+        "--model",
+        type=str,
+        default="cnn",
+        help="Select model for kompressor (cnn | mlp)",
+    )
+    parser.add_argument(
+        "-pr",
+        "--predictor",
+        type=str,
+        default="regression",
+        help="Select predictor algorithm for kompressor (regression | )",
+    )
+    parser.add_argument(
+        "-log",
+        "--logging",
+        action='store_true',
+        help="Turn logging on",
+    )
+    parser.add_argument(
+        "-df",
+        "--data_folder",
+        type=dir_path,
+        help="Directory of data",
+    )
+    parser.add_argument(
+        "-ts",
+        "--test_size",
+        type=int,
+        default=1024,
+        help="Size of the test dataset"
+    )
+    parser.add_argument(
+        "-e",
+        "--epochs",
+        type=int,
+        default=100001,
+        help="Number of training steps"
+    )
+    parser.add_argument(
+        "-b_train",
+        "--batch_train_size",
+        type=int,
+        default=5,
+        help="Batch size for training"
+    )
+
+    parser.add_argument(
+        "-b_test",
+        "--batch_test_size",
+        type=int,
+        default=1,
+        help="Batch size for testing"
+    )
+
+    args = parser.parse_args()
+    return args
+
+
