@@ -1,11 +1,13 @@
-from base import Kompressor
+from training.compressors.base import BaseCompressor
+from training.compressors import Compressor
 import haiku as hk
 import optax
 import jax
 import jax.numpy as jnp
+import numpy as np
 from tqdm import trange
 
-class HaikuKompressor(Kompressor):
+class HaikuCompressor(BaseCompressor):
 
     def __init__(self, encode_fn, decode_fn, padding, model_fn, predictions_fn, seed=None):
         super().__init__(encode_fn=encode_fn, decode_fn=decode_fn, padding=padding)
@@ -78,3 +80,6 @@ class HaikuKompressor(Kompressor):
 
         # Return self to enable chaining
         return self
+
+
+_compressor = Compressor("haiku", HaikuCompressor)

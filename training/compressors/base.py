@@ -1,8 +1,8 @@
-from abc import abstractmethod, ABCMeta
+from abc import abstractmethod, ABC
 import kompressor as kom
 
 
-class Kompressor(ABCMeta):
+class BaseCompressor(ABC):
 
     def __init__(self, encode_fn, decode_fn, padding):
         self.encode_fn, self.decode_fn = encode_fn, decode_fn
