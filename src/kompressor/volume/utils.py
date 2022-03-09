@@ -63,7 +63,7 @@ def targets_from_highres(highres):
     x2map = highres[:,  2::2,  2::2,  1::2]
     x3map = highres[:,  2::2, :-1:2,  1::2]
 
-    # Stack the vectors LRUDFBC order with dim [B,D,H,W,19,...]
+    # Stack the vectors LRUDFBCZZZZYYYYXXXX order with dim [B,D,H,W,19,...]
     targets = jnp.stack([
         lmap, rmap, umap, dmap, fmap, bmap, cmap,
         z0map, z1map, z2map, z3map,
@@ -152,7 +152,7 @@ def maps_from_predictions(predictions):
     xmap = xmap.at[:, ::pd, 1:-1, :].mul(0.5)
     xmap = xmap.astype(dtype)
 
-    return lrmap, udmap, fbmap, cmap, zmap, ymap, xmap
+    return dict(lrmap=lrmap, udmap=udmap, fbmap=fbmap, cmap=cmap, zmap=zmap, ymap=ymap, xmap=xmap)
 
 
 @jax.jit
@@ -168,13 +168,12 @@ def maps_from_highres(highres):
     ymap  = highres[:,  ::2, 1::2,  ::2]
     xmap  = highres[:,  ::2,  ::2, 1::2]
 
-    return lrmap, udmap, fbmap, cmap, zmap, ymap, xmap
+    return dict(lrmap=lrmap, udmap=udmap, fbmap=fbmap, cmap=cmap, zmap=zmap, ymap=ymap, xmap=xmap)
 
 
 @jax.jit
 def highres_from_lowres_and_maps(lowres, maps):
     # Merge together a lowres volume and the seven maps of known values representing the missing voxels
-    lrmap, udmap, fbmap, cmap, zmap, ymap, xmap = maps
 
     # Determine the size of the highres volume given the size of the lowres
     dtype = lowres.dtype
@@ -184,13 +183,13 @@ def highres_from_lowres_and_maps(lowres, maps):
     # Volume for containing the merged output
     highres = jnp.zeros((batch_size, hd, hh, hw, *channels), dtype=dtype)
     highres = highres.at[:,  ::2,  ::2,  ::2].set(lowres)  # Apply the values from the lowres volume
-    highres = highres.at[:, 1::2, 1::2,  ::2].set(lrmap)   # Apply the values from the left and right of the pluses
-    highres = highres.at[:, 1::2,  ::2, 1::2].set(udmap)   # Apply the values from the up and down of the pluses
-    highres = highres.at[:,  ::2, 1::2, 1::2].set(fbmap)   # Apply the values from the front and back of the pluses
-    highres = highres.at[:, 1::2, 1::2, 1::2].set(cmap)    # Apply the values from the centre of the pluses
-    highres = highres.at[:, 1::2,  ::2,  ::2].set(zmap)    # Apply the values from the central z-axis plane corners
-    highres = highres.at[:,  ::2, 1::2,  ::2].set(ymap)    # Apply the values from the central y-axis plane corners
-    highres = highres.at[:,  ::2,  ::2, 1::2].set(xmap)    # Apply the values from the central x-axis plane corners
+    highres = highres.at[:, 1::2, 1::2,  ::2].set(maps['lrmap'])   # Apply the values from the left and right of the pluses
+    highres = highres.at[:, 1::2,  ::2, 1::2].set(maps['udmap'])   # Apply the values from the up and down of the pluses
+    highres = highres.at[:,  ::2, 1::2, 1::2].set(maps['fbmap'])   # Apply the values from the front and back of the pluses
+    highres = highres.at[:, 1::2, 1::2, 1::2].set(maps['cmap'])    # Apply the values from the centre of the pluses
+    highres = highres.at[:, 1::2,  ::2,  ::2].set(maps['zmap'])    # Apply the values from the central z-axis plane corners
+    highres = highres.at[:,  ::2, 1::2,  ::2].set(maps['ymap'])    # Apply the values from the central y-axis plane corners
+    highres = highres.at[:,  ::2,  ::2, 1::2].set(maps['xmap'])    # Apply the values from the central x-axis plane corners
 
     return highres
 
@@ -251,12 +250,16 @@ def pad_map(inputs, padding):
 
 
 def pad_maps(maps, padding):
-    # Unpack the maps and the padding
-    lrmap, udmap, fbmap, cmap, zmap, ymap, xmap = maps
+    # Unpack the padding
     pd, ph, pw = padding
     # Pad maps based on even padding
-    return pad_map(lrmap, (0, 0, pw)), pad_map(udmap, (0, ph, 0)), pad_map(fbmap, (pd, 0, 0)), cmap, \
-           pad_map(zmap, (0, ph, pw)), pad_map(ymap, (pd, 0, pw)), pad_map(xmap, (pd, ph, 0))
+    return dict(lrmap=pad_map(maps['lrmap'], (0, 0, pw)),
+                udmap=pad_map(maps['udmap'], (0, ph, 0)),
+                fbmap=pad_map(maps['fbmap'], (pd, 0, 0)),
+                cmap=maps['cmap'],
+                zmap=pad_map(maps['zmap'], (0, ph, pw)),
+                ymap=pad_map(maps['ymap'], (pd, 0, pw)),
+                xmap=pad_map(maps['xmap'], (pd, ph, 0)))
 
 
 def trim(inputs, padding):
@@ -267,12 +270,16 @@ def trim(inputs, padding):
 
 
 def trim_maps(maps, padding):
-    # Unpack the maps and the padding
-    lrmap, udmap, fbmap, cmap, zmap, ymap, xmap = maps
+    # Unpack the padding
     pd, ph, pw = padding
     # Trim maps based on even padding
-    return trim(lrmap, (0, 0, pw)), trim(udmap, (0, ph, 0)), trim(fbmap, (pd, 0, 0)), cmap, \
-           trim(zmap, (0, ph, pw)), trim(ymap, (pd, 0, pw)), trim(xmap, (pd, ph, 0))
+    return dict(lrmap=trim(maps['lrmap'], (0, 0, pw)),
+                udmap=trim(maps['udmap'], (0, ph, 0)),
+                fbmap=trim(maps['fbmap'], (pd, 0, 0)),
+                cmap=maps['cmap'],
+                zmap=trim(maps['zmap'], (0, ph, pw)),
+                ymap=trim(maps['ymap'], (pd, 0, pw)),
+                xmap=trim(maps['xmap'], (pd, ph, 0)))
 
 
 ########################################################################################################################

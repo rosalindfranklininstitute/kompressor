@@ -70,7 +70,7 @@ class VolumeEncodeDecodeTest(unittest.TestCase):
             # Extract the maps from the predictions
             pred_maps = kom.volume.maps_from_predictions(predictions)
             # Convert the predictions to dummy logits (one hot encodings)
-            return [jax.nn.softmax(pred_map, axis=-1) for pred_map in pred_maps]
+            return jax.tree_map(partial(jax.nn.softmax, axis=-1), pred_maps)
 
         return predictions_fn
 
@@ -102,7 +102,9 @@ class VolumeEncodeDecodeTest(unittest.TestCase):
                 self.assertEqual(ew, 0)
 
                 # Check that the lowres and maps are the correct sizes and dtypes
-                lrmap, udmap, fbmap, cmap, zmap, ymap, xmap = maps
+                self.assertEqual(len(maps), 7)
+                lrmap, udmap, fbmap, cmap, zmap, ymap, xmap = maps['lrmap'], maps['udmap'], maps['fbmap'], maps['cmap'], \
+                                                              maps['zmap'], maps['ymap'], maps['xmap']
 
                 self.assertEqual(lrmap.dtype, highres.dtype)
                 self.assertEqual(lrmap.ndim, highres.ndim)
@@ -243,7 +245,9 @@ class VolumeEncodeDecodeTest(unittest.TestCase):
                 self.assertEqual(ew, 0)
 
                 # Check that the lowres and maps are the correct sizes and dtypes
-                lrmap, udmap, fbmap, cmap, zmap, ymap, xmap = maps
+                self.assertEqual(len(maps), 7)
+                lrmap, udmap, fbmap, cmap, zmap, ymap, xmap = maps['lrmap'], maps['udmap'], maps['fbmap'], maps['cmap'], \
+                                                              maps['zmap'], maps['ymap'], maps['xmap']
 
                 self.assertEqual(lrmap.dtype, highres.dtype)
                 self.assertEqual(lrmap.ndim, highres.ndim)
@@ -382,7 +386,9 @@ class VolumeEncodeDecodeTest(unittest.TestCase):
         self.assertEqual(ew, 0)
 
         # Check that the lowres and maps are the correct sizes and dtypes
-        lrmap, udmap, fbmap, cmap, zmap, ymap, xmap = maps
+        self.assertEqual(len(maps), 7)
+        lrmap, udmap, fbmap, cmap, zmap, ymap, xmap = maps['lrmap'], maps['udmap'], maps['fbmap'], maps['cmap'], \
+                                                      maps['zmap'], maps['ymap'], maps['xmap']
 
         self.assertEqual(lrmap.dtype, highres.dtype)
         self.assertEqual(lrmap.ndim, highres.ndim)
@@ -487,7 +493,10 @@ class VolumeEncodeDecodeTest(unittest.TestCase):
                 # Encode the entire input at once to check for consistency
                 full_lowres, (full_maps, full_dims) = kom.volume.encode(predictions_fn, encode_fn, highres,
                                                                         padding=padding)
-                full_lrmap, full_udmap, full_fbmap, full_cmap, full_zmap, full_ymap, full_xmap = full_maps
+                self.assertEqual(len(full_maps), 7)
+                full_lrmap, full_udmap, full_fbmap, full_cmap, full_zmap, full_ymap, full_xmap = \
+                    full_maps['lrmap'], full_maps['udmap'], full_maps['fbmap'], full_maps['cmap'], \
+                    full_maps['zmap'],  full_maps['ymap'], full_maps['xmap']
 
                 # Encode the input in chunks
                 lowres, (maps, dims) = kom.volume.encode_chunks(predictions_fn, encode_fn, highres,
@@ -504,7 +513,9 @@ class VolumeEncodeDecodeTest(unittest.TestCase):
                 self.assertEqual(ew, full_ew)
 
                 # Check that processing in chunks gives the same results as processing all at once
-                lrmap, udmap, fbmap, cmap, zmap, ymap, xmap = maps
+                self.assertEqual(len(maps), 7)
+                lrmap, udmap, fbmap, cmap, zmap, ymap, xmap = maps['lrmap'], maps['udmap'], maps['fbmap'], maps['cmap'], \
+                                                              maps['zmap'], maps['ymap'], maps['xmap']
 
                 self.assertEqual(lowres.dtype, full_lowres.dtype)
                 self.assertEqual(lowres.ndim, full_lowres.ndim)
@@ -676,7 +687,10 @@ class VolumeEncodeDecodeTest(unittest.TestCase):
                 # Encode the entire input at once to check for consistency
                 full_lowres, (full_maps, full_dims) = kom.volume.encode(predictions_fn, encode_fn, highres,
                                                                         padding=padding)
-                full_lrmap, full_udmap, full_fbmap, full_cmap, full_zmap, full_ymap, full_xmap = full_maps
+                self.assertEqual(len(full_maps), 7)
+                full_lrmap, full_udmap, full_fbmap, full_cmap, full_zmap, full_ymap, full_xmap = \
+                    full_maps['lrmap'], full_maps['udmap'], full_maps['fbmap'], full_maps['cmap'], \
+                    full_maps['zmap'], full_maps['ymap'], full_maps['xmap']
 
                 # Encode the input in chunks
                 lowres, (maps, dims) = kom.volume.encode_chunks(predictions_fn, encode_fn, highres,
@@ -693,7 +707,9 @@ class VolumeEncodeDecodeTest(unittest.TestCase):
                 self.assertEqual(ew, full_ew)
 
                 # Check that processing in chunks gives the same results as processing all at once
-                lrmap, udmap, fbmap, cmap, zmap, ymap, xmap = maps
+                self.assertEqual(len(maps), 7)
+                lrmap, udmap, fbmap, cmap, zmap, ymap, xmap = maps['lrmap'], maps['udmap'], maps['fbmap'], maps['cmap'], \
+                                                              maps['zmap'], maps['ymap'], maps['xmap']
 
                 self.assertEqual(lowres.dtype, full_lowres.dtype)
                 self.assertEqual(lowres.ndim, full_lowres.ndim)

@@ -94,7 +94,10 @@ class VolumeUtilsTest(unittest.TestCase):
         predictions = kom.volume.targets_from_highres(highres)
 
         # Merge duplicate predictions together to get the maps
-        lrmap, udmap, fbmap, cmap, zmap, ymap, xmap = kom.volume.maps_from_predictions(predictions)
+        maps = kom.volume.maps_from_predictions(predictions)
+        self.assertEqual(len(maps), 7)
+        lrmap, udmap, fbmap, cmap, zmap, ymap, xmap = maps['lrmap'], maps['udmap'], maps['fbmap'], maps['cmap'], \
+                                                      maps['zmap'], maps['ymap'], maps['xmap']
 
         # Check the merged maps have the correct sizes and dtypes
         self.assertEqual(lrmap.dtype, predictions.dtype)
@@ -177,7 +180,10 @@ class VolumeUtilsTest(unittest.TestCase):
         highres = self.dummy_highres()
 
         # Extract the LR, UD, FB, C, Z, Y, and X maps from the highres
-        lrmap, udmap, fbmap, cmap, zmap, ymap, xmap = kom.volume.maps_from_highres(highres)
+        maps = kom.volume.maps_from_highres(highres)
+        self.assertEqual(len(maps), 7)
+        lrmap, udmap, fbmap, cmap, zmap, ymap, xmap = maps['lrmap'], maps['udmap'], maps['fbmap'], maps['cmap'], \
+                                                      maps['zmap'], maps['ymap'], maps['xmap']
 
         # Check the extracted maps have the correct sizes and dtypes
         self.assertEqual(lrmap.dtype, highres.dtype)

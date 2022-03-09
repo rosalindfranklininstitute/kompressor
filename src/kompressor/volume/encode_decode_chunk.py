@@ -21,6 +21,7 @@
 # SOFTWARE.
 
 from itertools import product
+import jax
 import jax.numpy as jnp
 
 # Import kompressor volume utilities
@@ -88,7 +89,7 @@ def process_chunks(predictions_fn, code_fn, lowres, reference_maps, chunk, paddi
     padded_lowres = pad_neighborhood(lowres, padding)
 
     # Pre-allocate full decoded maps
-    coded_maps = [jnp.zeros_like(reference_map) for reference_map in reference_maps]
+    coded_maps = jax.tree_map(jnp.zeros_like, reference_maps)
 
     chunks = product(yield_chunks(ld, cd), yield_chunks(lh, ch), yield_chunks(lw, cw))
     if progress_fn is not None:
@@ -106,12 +107,19 @@ def process_chunks(predictions_fn, code_fn, lowres, reference_maps, chunk, paddi
         chunk_pred_maps = predictions_fn(chunk_lowres)
 
         # Update each decoded maps with the values for this chunk
-        for idx, (chunk_pred_map, reference_map) in enumerate(zip(chunk_pred_maps, reference_maps)):
+        def chunk_fn(coded_map, chunk_pred_map, reference_map):
+            # Determine the size of the chunk to extract, compensating for padding
             pd, ph, pw = (chunk_pred_map.shape[1] - (pz0+pz1)), \
                          (chunk_pred_map.shape[2] - (py0+py1)), \
                          (chunk_pred_map.shape[3] - (px0+px1))
+
+            # Apply the coding function to the chunk
             chunk_coded_map = code_fn(chunk_pred_map[:, pz0:(pz0+pd), py0:(py0+ph), px0:(px0+pw)],
                                       reference_map[:, z0:(z0+pd), y0:(y0+ph), x0:(x0+pw)])
-            coded_maps[idx] = coded_maps[idx].at[:, z0:(z0+pd), y0:(y0+ph), x0:(x0+pw)].set(chunk_coded_map)
+
+            # Write the results into correct location of the full coded map
+            return coded_map.at[:, z0:(z0+pd), y0:(y0+ph), x0:(x0+pw)].set(chunk_coded_map)
+
+        coded_maps = jax.tree_multimap(chunk_fn, coded_maps, chunk_pred_maps, reference_maps)
 
     return coded_maps
