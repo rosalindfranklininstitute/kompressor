@@ -108,3 +108,39 @@ def __option_parser():
     return args
 
 
+def main():
+    """
+
+    Returns
+    -------
+    """
+    # Setup
+    args = __option_parser()
+
+    # Setup Args
+    models.use_model(args.model)
+    predictors.use_predictor(args.predictor)
+    compressors.use_compressor(args.kompressor)
+    dataset_paths = sorted(list(glob(args.data_folder + '*.png')))
+    batch_train_size = args.batch_train_size
+    batch_test_size = args.batch_test_size
+    test_size = args.test_size
+    epochs = args.epochs
+    logging = args.logging
+    dataset_split = len(dataset_paths) - test_size
+    dataset_train = dataset_paths[:dataset_split]
+    dataset_test = dataset_paths[dataset_split:]
+
+    # Setup plugins
+    model = models.get_model()
+    predictor = predictors.get_predictor()
+    compressor = compressors.get_compressor()
+
+
+    print('dataset_train', len(dataset_train), 'dataset_test', len(dataset_test))
+
+
+
+
+if __name__ == "__main__":
+    main()
