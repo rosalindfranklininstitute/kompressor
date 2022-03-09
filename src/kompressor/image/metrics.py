@@ -44,7 +44,7 @@ def imageio_rgb_bpp(batch, *imageio_args, **imageio_kargs):
     return bpp_fn(batch) if (batch.ndim == 3) else np.array(list(map(bpp_fn, batch)))
 
 
-@partial(jax.jit, static_argnums=1)
+@partial(jax.jit, static_argnames=('k',))
 def mean_within_k(batch, k):
     # Compute the percentage of pixels that fall within [-k, +k] of the target
     assert batch.ndim >= 3

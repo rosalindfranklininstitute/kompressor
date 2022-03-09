@@ -40,8 +40,8 @@ def mean_abs_error(pred, gt):
     return jnp.mean(jnp.reshape(delta, (batch_size, -1)), axis=-1)
 
 
-@partial(jax.jit, static_argnums=2)
-def mean_charbonnier_error(pred, gt, eps):
+@partial(jax.jit, static_argnames=('eps',))
+def mean_charbonnier_error(pred, gt, eps=1e-3):
     batch_size = gt.shape[0]
     delta = jnp.sqrt(jnp.square(jnp.float32(gt) - jnp.float32(pred)) + jnp.square(eps))
     return jnp.mean(jnp.reshape(delta, (batch_size, -1)), axis=-1)

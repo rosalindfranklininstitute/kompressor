@@ -195,9 +195,8 @@ def highres_from_lowres_and_maps(lowres, maps):
     return highres
 
 
-# TODO make padding default to 0 when JAX merges being able to have static named args in jit functions
-@partial(jax.jit, static_argnums=1)
-def features_from_lowres(lowres, padding):
+@partial(jax.jit, static_argnames=('padding',))
+def features_from_lowres(lowres, padding=0):
     # Extract the features around each 2x2x2 neighborhood (assumes the lowres is already padded)
     pd, ph, pw = (lowres.shape[1] - (padding * 2)) - 1, \
                  (lowres.shape[2] - (padding * 2)) - 1, \
@@ -210,8 +209,8 @@ def features_from_lowres(lowres, padding):
                       for x in range((padding*2)+2)], axis=4)
 
 
-@partial(jax.jit, static_argnums=1)
-def pad_neighborhood(lowres, padding):
+@partial(jax.jit, static_argnames=('padding',))
+def pad_neighborhood(lowres, padding=0):
     # Pad only the 3 spatial dimensions
     spatial_padding = ((padding, padding),) * 3
     data_padding    = ((0, 0),) * len(lowres.shape[4:])
