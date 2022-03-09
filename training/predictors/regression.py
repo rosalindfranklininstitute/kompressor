@@ -1,6 +1,8 @@
 import jax
 import jax.numpy as jnp
 import kompressor as kom
+from training.predictors import Predictor
+
 
 def regression_predictor(model, params):
 
@@ -20,3 +22,6 @@ def regression_predictor(model, params):
         return maps
 
     return predictions_fn
+
+
+_predictor = Predictor("reg", regression_predictor)
