@@ -1,3 +1,4 @@
+from training.models import Model
 import jax
 import haiku as hk
 
@@ -11,7 +12,8 @@ def convolutional_encoder(padding: int):
         features = jax.nn.swish(hk.Conv2D(300, 2, padding='VALID')(lowres))
 
         for _ in range(padding):
-            # Widen the receptive field up to the padding value using 3x3 convolutions to pool by [-1, +1) pixels with each layer
+            # Widen the receptive field up to the padding value using 3x3 convolutions to pool by [-1, +1) pixels
+            # with each layer
             features = jax.nn.swish(hk.Conv2D(100, 3, padding='VALID')(features))
 
         # Output predictions for each neighbourhood
@@ -20,3 +22,6 @@ def convolutional_encoder(padding: int):
         return hk.Reshape((H, W, P, C))(features)
 
     return net_fn
+
+
+_model = Model("cnn", convolutional_encoder)

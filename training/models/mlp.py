@@ -1,7 +1,7 @@
 import jax
 import haiku as hk
 import kompressor as kom
-
+from training.models import Model
 
 def mlp_encoder(padding, convolutional=False):
     def net_fn(lowres):
@@ -43,3 +43,5 @@ def mlp_encoder(padding, convolutional=False):
         return mlp(features)
 
     return net_fn
+
+_model = Model("mlp", mlp_encoder)
