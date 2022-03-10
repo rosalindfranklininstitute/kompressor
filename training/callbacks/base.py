@@ -1,9 +1,8 @@
-from abc import abstractmethod, ABCMeta
+from abc import abstractmethod, ABC
 
 
-class Callback(ABCMeta):
+class Callback(ABC):
 
-    @abstractmethod
     def on_step_start(self, *args, **kargs):
         pass
 

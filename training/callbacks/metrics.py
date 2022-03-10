@@ -1,4 +1,4 @@
-from base import Callback
+from training.callbacks.base import Callback
 from collections import defaultdict
 import os
 import time
