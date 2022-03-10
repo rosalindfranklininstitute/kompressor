@@ -20,6 +20,10 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+
+import jax
+
+
 # Import kompressor volume utilities
 from .utils import \
     lowres_from_highres, maps_from_highres, highres_from_lowres_and_maps, \
@@ -48,7 +52,7 @@ def encode(predictions_fn, encode_fn, highres, padding=0):
     pred_maps = predictions_fn(pad_neighborhood(lowres, padding))
 
     # Compare the predictions to the true values for the pluses, trim the resulting maps if even padding was applied
-    encoded_maps = trim_maps([encode_fn(*maps) for maps in zip(pred_maps, gt_maps)], dims)
+    encoded_maps = trim_maps(jax.tree_multimap(encode_fn, pred_maps, gt_maps), dims)
 
     # Trim even padding off lowres if needed
     lowres = trim(lowres, dims)
@@ -76,7 +80,7 @@ def decode(predictions_fn, decode_fn, lowres, encoded, padding=0):
     pred_maps = predictions_fn(pad_neighborhood(lowres, padding))
 
     # Correct the predictions using the provided encoded maps
-    decoded_maps = [decode_fn(*maps) for maps in zip(pred_maps, encoded_maps)]
+    decoded_maps = jax.tree_multimap(decode_fn, pred_maps, encoded_maps)
 
     # Reconstruct highres volume from the corrected true values
     highres = highres_from_lowres_and_maps(lowres, decoded_maps)

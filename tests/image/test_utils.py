@@ -92,7 +92,9 @@ class ImageUtilsTest(unittest.TestCase):
         predictions = kom.image.targets_from_highres(highres)
 
         # Merge duplicate predictions together to get the maps
-        lrmap, udmap, cmap = kom.image.maps_from_predictions(predictions)
+        maps = kom.image.maps_from_predictions(predictions)
+        self.assertEqual(len(maps), 3)
+        lrmap, udmap, cmap = maps['lrmap'], maps['udmap'], maps['cmap']
 
         # Check the merged maps have the correct sizes and dtypes
         self.assertEqual(lrmap.dtype, predictions.dtype)
@@ -132,9 +134,11 @@ class ImageUtilsTest(unittest.TestCase):
         highres = self.dummy_highres()
 
         # Extract the LR, UD, and C maps from the highres
-        lrmap, udmap, cmap = kom.image.maps_from_highres(highres)
+        maps = kom.image.maps_from_highres(highres)
+        self.assertEqual(len(maps), 3)
+        lrmap, udmap, cmap = maps['lrmap'], maps['udmap'], maps['cmap']
 
-        # Check the extracted maps have the correct sizes and dtypes
+            # Check the extracted maps have the correct sizes and dtypes
         self.assertEqual(lrmap.dtype, highres.dtype)
         self.assertEqual(lrmap.ndim, highres.ndim)
         self.assertTrue(np.allclose(lrmap.shape, [

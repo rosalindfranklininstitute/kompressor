@@ -83,7 +83,7 @@ def maps_from_predictions(predictions):
     # Map for containing aggregated predictions of the centre of the pluses
     cmap = predictions[:, :, :, 4]
 
-    return lrmap, udmap, cmap
+    return dict(lrmap=lrmap, udmap=udmap, cmap=cmap)
 
 
 @jax.jit
@@ -93,13 +93,12 @@ def maps_from_highres(highres):
     udmap = highres[:,  ::2, 1::2]
     cmap  = highres[:, 1::2, 1::2]
 
-    return lrmap, udmap, cmap
+    return dict(lrmap=lrmap, udmap=udmap, cmap=cmap)
 
 
 @jax.jit
 def highres_from_lowres_and_maps(lowres, maps):
     # Merge together a lowres image and the three maps of known values representing the missing pluses
-    lrmap, udmap, cmap = maps
 
     # Determine the size of the highres image given the size of the lowres
     dtype = lowres.dtype
@@ -109,9 +108,9 @@ def highres_from_lowres_and_maps(lowres, maps):
     # Image for containing the merged output
     highres = jnp.zeros((batch_size, hh, hw, *channels), dtype=dtype)
     highres = highres.at[:,  ::2,  ::2].set(lowres)  # Apply the values from the lowres image
-    highres = highres.at[:, 1::2,  ::2].set(lrmap)   # Apply the values from the left and right of the pluses
-    highres = highres.at[:,  ::2, 1::2].set(udmap)   # Apply the values from the up and down of the pluses
-    highres = highres.at[:, 1::2, 1::2].set(cmap)    # Apply the values from the centre of the pluses
+    highres = highres.at[:, 1::2,  ::2].set(maps['lrmap'])   # Apply the values from the left and right of the pluses
+    highres = highres.at[:,  ::2, 1::2].set(maps['udmap'])   # Apply the values from the up and down of the pluses
+    highres = highres.at[:, 1::2, 1::2].set(maps['cmap'])    # Apply the values from the centre of the pluses
 
     return highres
 
@@ -170,11 +169,12 @@ def pad_map(inputs, padding):
 
 
 def pad_maps(maps, padding):
-    # Unpack the maps and the padding
-    lrmap, udmap, cmap = maps
+    # Unpack the padding
     ph, pw = padding
     # Pad maps based on even padding
-    return pad_map(lrmap, (0, pw)), pad_map(udmap, (ph, 0)), cmap
+    return dict(lrmap=pad_map(maps['lrmap'], (0, pw)),
+                udmap=pad_map(maps['udmap'], (ph, 0)),
+                cmap=maps['cmap'])
 
 
 def trim(inputs, padding):
@@ -185,11 +185,12 @@ def trim(inputs, padding):
 
 
 def trim_maps(maps, padding):
-    # Unpack the maps and the padding
-    lrmap, udmap, cmap = maps
+    # Unpack the padding
     ph, pw = padding
     # Trim maps based on even padding
-    return trim(lrmap, (0, pw)), trim(udmap, (ph, 0)), cmap
+    return dict(lrmap=trim(maps['lrmap'], (0, pw)),
+                udmap=trim(maps['udmap'], (ph, 0)),
+                cmap=maps['cmap'])
 
 
 ########################################################################################################################

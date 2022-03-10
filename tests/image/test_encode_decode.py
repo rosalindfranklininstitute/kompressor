@@ -69,7 +69,7 @@ class ImageEncodeDecodeTest(unittest.TestCase):
             # Extract the maps from the predictions
             pred_maps = kom.image.maps_from_predictions(predictions)
             # Convert the predictions to dummy logits (one hot encodings)
-            return [jax.nn.softmax(pred_map, axis=-1) for pred_map in pred_maps]
+            return jax.tree_map(partial(jax.nn.softmax, axis=-1), pred_maps)
 
         return predictions_fn
 
@@ -100,7 +100,8 @@ class ImageEncodeDecodeTest(unittest.TestCase):
                 self.assertEqual(ew, 0)
 
                 # Check that the lowres and maps are the correct sizes and dtypes
-                lrmap, udmap, cmap = maps
+                self.assertEqual(len(maps), 3)
+                lrmap, udmap, cmap = maps['lrmap'], maps['udmap'], maps['cmap']
 
                 self.assertEqual(lowres.dtype, highres.dtype)
                 self.assertEqual(lowres.ndim, highres.ndim)
@@ -205,7 +206,8 @@ class ImageEncodeDecodeTest(unittest.TestCase):
                 self.assertEqual(ew, 0)
 
                 # Check that the lowres and maps are the correct sizes and dtypes
-                lrmap, udmap, cmap = maps
+                self.assertEqual(len(maps), 3)
+                lrmap, udmap, cmap = maps['lrmap'], maps['udmap'], maps['cmap']
 
                 self.assertEqual(lowres.dtype, highres.dtype)
                 self.assertEqual(lowres.ndim, highres.ndim)
@@ -308,7 +310,8 @@ class ImageEncodeDecodeTest(unittest.TestCase):
         self.assertEqual(ew, 0)
 
         # Check that the lowres and maps are the correct sizes and dtypes
-        lrmap, udmap, cmap = maps
+        self.assertEqual(len(maps), 3)
+        lrmap, udmap, cmap = maps['lrmap'], maps['udmap'], maps['cmap']
 
         self.assertEqual(lowres.dtype, highres.dtype)
         self.assertEqual(lowres.ndim, highres.ndim)
@@ -379,7 +382,8 @@ class ImageEncodeDecodeTest(unittest.TestCase):
                 # Encode the entire input at once to check for consistency
                 full_lowres, (full_maps, full_dims) = kom.image.encode(predictions_fn, encode_fn, highres,
                                                                        padding=padding)
-                full_lrmap, full_udmap, full_cmap = full_maps
+                self.assertEqual(len(full_maps), 3)
+                full_lrmap, full_udmap, full_cmap = full_maps['lrmap'], full_maps['udmap'], full_maps['cmap']
 
                 # Encode the input in chunks
                 lowres, (maps, dims) = kom.image.encode_chunks(predictions_fn, encode_fn, highres,
@@ -394,7 +398,8 @@ class ImageEncodeDecodeTest(unittest.TestCase):
                 self.assertEqual(ew, full_ew)
 
                 # Check that processing in chunks gives the same results as processing all at once
-                lrmap, udmap, cmap = maps
+                self.assertEqual(len(maps), 3)
+                lrmap, udmap, cmap = maps['lrmap'], maps['udmap'], maps['cmap']
 
                 self.assertEqual(lowres.dtype, full_lowres.dtype)
                 self.assertEqual(lowres.ndim, full_lowres.ndim)
@@ -549,7 +554,8 @@ class ImageEncodeDecodeTest(unittest.TestCase):
                 # Encode the entire input at once to check for consistency
                 full_lowres, (full_maps, full_dims) = kom.image.encode(predictions_fn, encode_fn, highres,
                                                                        padding=padding)
-                full_lrmap, full_udmap, full_cmap = full_maps
+                self.assertEqual(len(full_maps), 3)
+                full_lrmap, full_udmap, full_cmap = full_maps['lrmap'], full_maps['udmap'], full_maps['cmap']
 
                 # Encode the input in chunks
                 lowres, (maps, dims) = kom.image.encode_chunks(predictions_fn, encode_fn, highres,
@@ -564,7 +570,8 @@ class ImageEncodeDecodeTest(unittest.TestCase):
                 self.assertEqual(ew, full_ew)
 
                 # Check that processing in chunks gives the same results as processing all at once
-                lrmap, udmap, cmap = maps
+                self.assertEqual(len(maps), 3)
+                lrmap, udmap, cmap = maps['lrmap'], maps['udmap'], maps['cmap']
 
                 self.assertEqual(lowres.dtype, full_lowres.dtype)
                 self.assertEqual(lowres.ndim, full_lowres.ndim)
