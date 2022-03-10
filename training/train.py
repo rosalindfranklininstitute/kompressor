@@ -2,7 +2,8 @@ import argparse
 import os
 import datetime
 import tensorflow as tf
-tf.config.set_visible_devices([], 'GPU')
+
+tf.config.set_visible_devices([], "GPU")
 import kompressor as kom
 from glob import glob
 import models
@@ -38,7 +39,7 @@ def __option_parser():
         "-p",
         "--padding",
         type=int,
-        default=1,
+        default=0,
         help="Select neighbourhood size for prediction model",
     )
     parser.add_argument(
@@ -65,7 +66,7 @@ def __option_parser():
     parser.add_argument(
         "-log",
         "--logging",
-        action='store_true',
+        action="store_true",
         help="Turn logging on",
     )
     parser.add_argument(
@@ -82,54 +83,41 @@ def __option_parser():
         help="Directory of data",
     )
     parser.add_argument(
-        "-ts",
-        "--test_size",
-        type=int,
-        default=1024,
-        help="Size of the test dataset"
+        "-ts", "--test_size", type=int, default=1024, help="Size of the test dataset"
     )
     parser.add_argument(
-        "-e",
-        "--epochs",
-        type=int,
-        default=100001,
-        help="Number of training steps"
+        "-e", "--epochs", type=int, default=100001, help="Number of training steps"
     )
     parser.add_argument(
         "-b_train",
         "--batch_train_size",
         type=int,
-        default=5,
-        help="Batch size for training"
+        default=512,
+        help="Batch size for training",
     )
-
     parser.add_argument(
         "-b_test",
         "--batch_test_size",
         type=int,
-        default=1,
-        help="Batch size for testing"
+        default=128,
+        help="Batch size for testing",
     )
     parser.add_argument(
-        "-chunk",
-        "--chunk_size",
-        type=int,
-        default=65, #65
-        help="Size of each chunk"
+        "-chunk", "--chunk_size", type=int, default=65, help="Size of each chunk"
     )
     parser.add_argument(
         "-chunks_per_sample",
         "--chunks_per_sample",
         type=int,
-        default=32, #32
-        help="Amount of times to repeat the same data to allow for different random chunks to be sampled from it"
+        default=32,
+        help="Amount of times to repeat the same data to allow for different random chunks to be sampled from it",
     )
     parser.add_argument(
         "-chunks_shuffle_buffer",
         "--chunks_shuffle_buffer",
         type=int,
-        default=0, #512
-        help="Buffer size for dataset shuffling"
+        default=512,
+        help="Buffer size for dataset shuffling",
     )
     args = parser.parse_args()
     return args
@@ -148,7 +136,7 @@ def main():
     models.use_model(args.model)
     predictors.use_predictor(args.predictor)
     compressors.use_compressor(args.kompressor)
-    dataset_paths = sorted(list(glob(args.data_folder + '*.png')))
+    dataset_paths = sorted(list(glob(args.data_folder + "*.png")))
     batch_train_size = args.batch_train_size
     batch_test_size = args.batch_test_size
     test_size = args.test_size
