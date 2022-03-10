@@ -169,9 +169,67 @@ def main():
     predictor = predictors.get_predictor()
     compressor = compressors.get_compressor()
 
-    print('dataset_train', len(dataset_train), 'dataset_test', len(dataset_test))
+    print("dataset_train", len(dataset_train), "dataset_test", len(dataset_test))
 
+    # Training
+    ds_train = (
+        tf.data.Dataset.from_tensor_slices(dataset_train)
+        .repeat()
+        .shuffle(len(dataset_train), reshuffle_each_iteration=True)
+        .map(decode_png_fn, num_parallel_calls=tf.data.AUTOTUNE)
+        .prefetch(buffer_size=tf.data.AUTOTUNE)
+    )
 
+    ds_train = (
+        kom.image.data.random_chunk_dataset(
+            ds_train,
+            padding=padding,
+            chunk=chunk_size,
+            chunks_per_sample=chunks_per_sample,
+            chunks_shuffle_buffer=chunks_shuffle_buffer,
+            levels=levels,
+        )
+        .batch(batch_train_size)
+        .prefetch(buffer_size=tf.data.AUTOTUNE)
+    )
+
+    ds_eval_test = (
+        tf.data.Dataset.from_tensor_slices(dataset_test)
+        .map(decode_png_fn, num_parallel_calls=tf.data.AUTOTUNE)
+        .batch(batch_test_size)
+        .prefetch(buffer_size=tf.data.AUTOTUNE)
+    )
+
+    encode_fn = kom.mapping.uint8.encode_values
+    decode_fn = kom.mapping.uint8.decode_values
+
+    compressor = compressor.Compressor(
+        encode_fn=encode_fn,
+        decode_fn=decode_fn,
+        padding=padding,
+        model_fn=model.Model,
+        predictions_fn=predictor.Predictor,
+    ).init(ds_train)
+
+    if logging:
+        callbacks = [
+            MetricsCallback(
+                log_dir=os.path.join(
+                    "logs", datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+                ),
+                chunk=None,
+                ds_train=None,
+                ds_test=ds_eval_test,
+                log_freq=logging_frequency,
+                levels=levels,
+            )
+        ]
+
+        compressor.fit(
+            ds_train=ds_train, start_step=0, end_step=epochs, callbacks=callbacks
+        )
+    else:
+        compressor.fit(ds_train=ds_train, start_step=0, end_step=epochs)
 
 
 if __name__ == "__main__":
