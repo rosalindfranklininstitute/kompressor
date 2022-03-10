@@ -69,6 +69,13 @@ def __option_parser():
         help="Turn logging on",
     )
     parser.add_argument(
+        "-log_freq",
+        "--logging_frequency",
+        type=int,
+        default=1000,
+        help="Amount of epochs between logging",
+    )
+    parser.add_argument(
         "-df",
         "--data_folder",
         type=dir_path,
@@ -103,7 +110,27 @@ def __option_parser():
         default=1,
         help="Batch size for testing"
     )
-
+    parser.add_argument(
+        "-chunk",
+        "--chunk_size",
+        type=int,
+        default=65, #65
+        help="Size of each chunk"
+    )
+    parser.add_argument(
+        "-chunks_per_sample",
+        "--chunks_per_sample",
+        type=int,
+        default=32, #32
+        help="Amount of times to repeat the same data to allow for different random chunks to be sampled from it"
+    )
+    parser.add_argument(
+        "-chunks_shuffle_buffer",
+        "--chunks_shuffle_buffer",
+        type=int,
+        default=0, #512
+        help="Buffer size for dataset shuffling"
+    )
     args = parser.parse_args()
     return args
 
@@ -130,12 +157,17 @@ def main():
     dataset_split = len(dataset_paths) - test_size
     dataset_train = dataset_paths[:dataset_split]
     dataset_test = dataset_paths[dataset_split:]
+    levels = args.levels
+    padding = args.padding
+    logging_frequency = args.logging_frequency
+    chunk_size = args.chunk_size
+    chunks_per_sample = args.chunks_per_sample
+    chunks_shuffle_buffer = args.chunks_shuffle_buffer
 
     # Setup plugins
     model = models.get_model()
     predictor = predictors.get_predictor()
     compressor = compressors.get_compressor()
-
 
     print('dataset_train', len(dataset_train), 'dataset_test', len(dataset_test))
 
