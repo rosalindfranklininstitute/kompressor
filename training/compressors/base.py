@@ -12,6 +12,18 @@ class BaseCompressor(ABC):
     def _predictions_fn(self):
         raise NotImplementedError()
 
+    @abstractmethod
+    def fit(self):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def save_model(self, file_name):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def load_model(self, file_name):
+        raise NotImplementedError()
+
     def encode(self, highres, levels=1, chunk=None, progress_fn=None, debug=False):
 
         assert levels > 0
