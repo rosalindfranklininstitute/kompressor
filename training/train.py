@@ -119,6 +119,20 @@ def __option_parser():
         default=512,
         help="Buffer size for dataset shuffling",
     )
+    parser.add_argument(
+        "-load",
+        "--load_model",
+        type=str,
+        default="",
+        help="Load trained model for training i.e best_model.npy",
+    )
+    parser.add_argument(
+        "-save",
+        "--save_model",
+        type=str,
+        default="",
+        help="Save model (saved as .npy)",
+    )
     args = parser.parse_args()
     return args
 
@@ -151,7 +165,8 @@ def main():
     chunk_size = args.chunk_size
     chunks_per_sample = args.chunks_per_sample
     chunks_shuffle_buffer = args.chunks_shuffle_buffer
-
+    load_model = args.load_model
+    save_model = args.save_model
     # Setup plugins
     model = models.get_model()
     predictor = predictors.get_predictor()
@@ -198,7 +213,8 @@ def main():
         model_fn=model.Model,
         predictions_fn=predictor.Predictor,
     ).init(ds_train)
-
+    if load_model != "":
+        compressor.load_model(load_model)
     if logging:
         callbacks = [
             MetricsCallback(
@@ -218,6 +234,9 @@ def main():
         )
     else:
         compressor.fit(ds_train=ds_train, start_step=0, end_step=epochs)
+    if save_model != "":
+        compressor.save_model(save_model)
+    print("Done")
 
 
 if __name__ == "__main__":
