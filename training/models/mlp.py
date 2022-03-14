@@ -44,4 +44,5 @@ def mlp_encoder(padding, convolutional=False):
 
     return net_fn
 
+
 _model = Model("mlp", mlp_encoder)
