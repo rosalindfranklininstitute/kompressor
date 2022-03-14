@@ -30,6 +30,22 @@ class HaikuCompressor(BaseCompressor):
 
         return self
 
+    def save_model(self, file_name):
+        np.save(file_name, self.avg_params, allow_pickle=True)
+
+    def load_model(self, file_name):
+        np_params = np.load(file_name, allow_pickle=True)
+
+        def jax_encoder(obj):
+            if isinstance(obj, np.ndarray):
+                jnp_array = jnp.asarray(obj)
+                return jnp_array
+            if isinstance(obj, dict):
+                for key in obj:
+                    obj[key] = jax_encoder(obj[key])
+            return obj
+        self.avg_params = jax_encoder(np_params.all())
+
     def fit(self, ds_train, start_step=0, end_step=1, callbacks=None):
 
         callbacks = callbacks or list()
