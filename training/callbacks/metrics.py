@@ -53,22 +53,21 @@ class MetricsCallback(Callback):
                     writer_path = os.path.join(self.log_dir, f'level={level}',
                                                f'lowres={"x".join(map(str, level_lowres.shape[1:]))}', mode)
 
-                    for label, encoded_map, highres_map in zip(['lrmap', 'udmap', 'cmap'], level_encoded_maps,
-                                                               level_highres_maps):
-
-                        centred_encoded_map = jnp.float32(kom.mapping.uint8.encode_transform_centre(encoded_map)) - 128.
+                    for label in level_encoded_maps.keys() & level_highres_maps.keys():
+                        centred_encoded_map = jnp.float32(
+                            kom.mapping.uint8.encode_transform_centre(level_encoded_maps[label])) - 128.
 
                         summaries[(writer_path, f'{label} | total variation')].append(
                             kom.image.losses.mean_total_variation(centred_encoded_map))
                         summaries[(writer_path, f'{label} | run length')].append(
-                            kom.image.metrics.mean_run_length(encoded_map))
+                            kom.image.metrics.mean_run_length(level_encoded_maps[label]))
 
                         for k in [1, 8]:
                             summaries[(writer_path, f'{label} | within k={k}')].append(
                                 kom.image.metrics.mean_within_k(centred_encoded_map, k))
 
-                        highres_bpp = kom.image.metrics.imageio_rgb_bpp(highres_map, format='png')
-                        encoded_bpp = kom.image.metrics.imageio_rgb_bpp(encoded_map, format='png')
+                        highres_bpp = kom.image.metrics.imageio_rgb_bpp(level_highres_maps[label], format='png')
+                        encoded_bpp = kom.image.metrics.imageio_rgb_bpp(level_encoded_maps[label], format='png')
                         summaries[(writer_path, f'{label} | png bpp')].append(encoded_bpp)
                         summaries[(writer_path, f'{label} | png ratio')].append(1. - (encoded_bpp / highres_bpp))
 
