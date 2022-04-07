@@ -23,6 +23,12 @@
 
 FROM quay.io/rosalindfranklininstitute/jax:v0.3.1
 
+# Install git
+RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections && \
+    apt-get update -y && apt-get install --no-install-recommends -y dialog apt-utils && \
+    apt-get install --no-install-recommends -y git && \
+    apt-get autoremove -y --purge && apt-get clean -y && rm -rf /var/lib/apt/lists/*
+
 RUN pip install --no-cache-dir --upgrade \
         git+https://github.com/deepmind/dm-haiku && \
     pip install --no-cache-dir --upgrade \
