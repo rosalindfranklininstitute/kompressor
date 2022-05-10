@@ -173,9 +173,10 @@ def main():
     predictor = predictors.get_predictor()
     compressor = compressors.get_compressor()
 
-    print("dataset_train", len(dataset_train), "dataset_test", len(dataset_test))
-
-    # Training
+    print("Arguments Passed:",  str(args))
+    print("Local Device Details:", str(jax.local_devices()))
+    print("Dataset Train Size:", len(dataset_train), "Dataset Test Size:", len(dataset_test))
+    print("Processing Datasets")
     ds_train = (
         tf.data.Dataset.from_tensor_slices(dataset_train)
         .repeat()
@@ -207,7 +208,7 @@ def main():
 
     encode_fn = kom.mapping.uint8.encode_values
     decode_fn = kom.mapping.uint8.decode_values
-
+    print("Initiating Model")
     compressor = compressor.Compressor(
         encode_fn=encode_fn,
         decode_fn=decode_fn,
@@ -217,6 +218,7 @@ def main():
     ).init(ds_train)
     if load_model != "":
         compressor.load_model(load_model)
+    print("Training Model")
     if logging:
         callbacks = [
             MetricsCallback(
@@ -237,6 +239,7 @@ def main():
     else:
         compressor.fit(ds_train=ds_train, start_step=0, end_step=epochs)
     if save_model != "":
+        print("Saving Model")
         compressor.save_model(save_model)
     print("Done")
 
