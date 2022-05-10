@@ -2,6 +2,7 @@ import argparse
 import os
 import datetime
 import tensorflow as tf
+import jax
 
 tf.config.set_visible_devices([], "GPU")
 import kompressor as kom
@@ -193,6 +194,7 @@ def main():
             levels=levels,
         )
         .batch(batch_train_size)
+        .batch(jax.local_device_count())
         .prefetch(buffer_size=tf.data.AUTOTUNE)
     )
 
