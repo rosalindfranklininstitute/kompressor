@@ -50,6 +50,10 @@ class HaikuCompressor(BaseCompressor):
         return 0.5 * sum(jnp.sum(jnp.square(param)) for param in jax.tree_leaves(params))
 
     @functools.partial(jax.jit, static_argnums=(0,))
+    def ema_update(self, params, avg_params):
+        return optax.incremental_update(params, avg_params, step_size=0.001)
+
+    @functools.partial(jax.jit, static_argnums=(0,))
     def loss(self, params, batch):
         predictions = self.model.apply(params, batch['lowres'])
         prediction_loss = jnp.mean(optax.l2_loss(predictions, batch['targets']))
