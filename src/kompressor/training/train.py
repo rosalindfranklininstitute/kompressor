@@ -205,6 +205,8 @@ def main():
         .batch(batch_test_size)
         .prefetch(buffer_size=tf.data.AUTOTUNE)
     )
+    total_train_batch_size = batch_train_size * jax.device_count()
+    num_train_steps = (len(dataset_train)) // total_train_batch_size
 
     encode_fn = kom.mapping.uint8.encode_values
     decode_fn = kom.mapping.uint8.decode_values
@@ -234,10 +236,10 @@ def main():
         ]
 
         compressor.fit(
-            ds_train=ds_train, start_step=0, end_step=epochs, callbacks=callbacks
+            ds_train=ds_train, start_step=0, end_step=epochs, steps_per_epoch=num_train_steps, callbacks=callbacks
         )
     else:
-        compressor.fit(ds_train=ds_train, start_step=0, end_step=epochs)
+        compressor.fit(ds_train=ds_train, start_step=0, end_step=epochs, steps_per_epoch=num_train_steps)
     if save_model != "":
         print("Saving Model")
         compressor.save_model(save_model)
