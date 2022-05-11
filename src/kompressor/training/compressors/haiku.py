@@ -8,6 +8,7 @@ import jax.numpy as jnp
 import numpy as np
 from tqdm import trange
 
+
 class HaikuCompressor(BaseCompressor):
 
     def __init__(self, encode_fn, decode_fn, padding, model_fn, predictions_fn, seed=None):
@@ -108,6 +109,9 @@ class HaikuCompressor(BaseCompressor):
                 self.avg_params = self.ema_update(sharded_params, self.avg_params)
 
             for callback in callbacks:
+                params = jax.tree_map(lambda x: x[0], sharded_params)
+                self.params = params
+                loss = jax.tree_map(lambda x: x[0], loss)
                 callback.on_step_end(step=step, loss=loss, compressor=self)
 
         # Return self to enable chaining
