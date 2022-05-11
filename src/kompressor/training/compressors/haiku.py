@@ -80,9 +80,19 @@ class HaikuCompressor(BaseCompressor):
         new_params = optax.apply_updates(params, updates)
         return value, new_params, opt_state
 
-        @jax.jit
-        def ema_update(params, avg_params):
-            return optax.incremental_update(params, avg_params, step_size=0.001)
+    def fit(self, ds_train, start_step=0, end_step=1, steps_per_epoch=1, callbacks=None):
+        callbacks = callbacks or list()
+        assert 0 <= start_step < end_step
+
+        ds_train = self.double_buffer_dataset(ds_train)
+        if self.avg_params is None:
+
+            self.avg_params, opt_state = self.init(next(ds_train))
+            sharded_params = self.avg_params
+        else:
+            opt_state = self.opt.init(self.avg_params)
+            sharded_params = jax.device_put_replicated(self.avg_params, self.local_devices)
+            opt_state = jax.device_put_replicated(opt_state, self.local_devices)
 
         # Train/eval loop
         for step in trange(start_step, end_step, desc='epochs'):
