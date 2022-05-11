@@ -23,6 +23,17 @@ class HaikuCompressor(BaseCompressor):
     def _predictions_fn(self):
         return self.__predictions_fn(self.model, self.avg_params)
 
+    def double_buffer_dataset(self, ds):
+        batch = None
+        for next_batch in ds:
+            assert next_batch is not None
+            next_batch = jax.tree_map(lambda x: jax.device_put_sharded(list(x.numpy()), self.local_devices), next_batch)
+            if batch is not None:
+                yield batch
+            batch = next_batch
+        if batch is not None:
+            yield batch
+
     @functools.partial(jax.pmap, static_broadcasted_argnums=(0,), axis_name="devices")
     def init(self, ds_train, seed=None):
         params = self.model.init(jax.random.PRNGKey(seed or np.random.randint(1e6)), ds_train['lowres'])
@@ -74,16 +85,17 @@ class HaikuCompressor(BaseCompressor):
             return optax.incremental_update(params, avg_params, step_size=0.001)
 
         # Train/eval loop
-        for step in trange(start_step, end_step, desc='steps'):
-
-            train_batch = next(ds_train)
+        for step in trange(start_step, end_step, desc='epochs'):
 
             for callback in callbacks:
                 callback.on_step_start(step=step, compressor=self)
 
-            # Update params
-            loss, params, opt_state = update(params, opt_state, train_batch)
-            self.avg_params = ema_update(params, self.avg_params)
+            for _ in trange(0, steps_per_epoch, desc="Steps"):
+                train_batch = next(ds_train)
+                # Update params
+                loss, sharded_params, opt_state = self.update(sharded_params, opt_state, train_batch)
+
+                self.avg_params = self.ema_update(sharded_params, self.avg_params)
 
             for callback in callbacks:
                 callback.on_step_end(step=step, loss=loss, compressor=self)
