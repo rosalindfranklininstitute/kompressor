@@ -1,3 +1,4 @@
+import functools
 from kompressor.training.compressors.base import BaseCompressor
 from kompressor.training.compressors import Compressor
 import haiku as hk
@@ -20,15 +21,11 @@ class HaikuCompressor(BaseCompressor):
     def _predictions_fn(self):
         return self.__predictions_fn(self.model, self.avg_params)
 
+    @functools.partial(jax.pmap, static_broadcasted_argnums=(0,), axis_name="devices")
     def init(self, ds_train, seed=None):
-
-        ds_train = ds_train.as_numpy_iterator()
-
-        if self.avg_params is None:
-            self.avg_params = self.model.init(jax.random.PRNGKey(seed or np.random.randint(1e6)),
-                                              next(ds_train)['lowres'])
-
-        return self
+        params = self.model.init(jax.random.PRNGKey(seed or np.random.randint(1e6)), ds_train['lowres'])
+        opt_state = self.opt.init(params)
+        return params, opt_state
 
     def save_model(self, file_name):
         np.save(file_name, self.avg_params, allow_pickle=True)

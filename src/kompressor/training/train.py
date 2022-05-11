@@ -215,7 +215,7 @@ def main():
         padding=padding,
         model_fn=model.Model,
         predictions_fn=predictor.Predictor,
-    ).init(ds_train)
+    )
     if load_model != "":
         compressor.load_model(load_model)
     print("Training Model")
