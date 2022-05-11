@@ -46,27 +46,15 @@ class HaikuCompressor(BaseCompressor):
             return obj
         self.avg_params = jax_encoder(np_params.all())
 
-    def fit(self, ds_train, start_step=0, end_step=1, callbacks=None):
+    @functools.partial(jax.jit, static_argnums=(0,))
+    def l2(self, params):
+        return 0.5 * sum(jnp.sum(jnp.square(param)) for param in jax.tree_leaves(params))
 
-        callbacks = callbacks or list()
-
-        assert 0 <= start_step < end_step
-
-        ds_train = ds_train.as_numpy_iterator()
-
-        params = self.avg_params
-        opt = optax.adam(1e-5)
-        opt_state = opt.init(params)
-
-        @jax.jit
-        def l2(params):
-            return 0.5 * sum(jnp.sum(jnp.square(param)) for param in jax.tree_leaves(params))
-
-        @jax.jit
-        def loss(params, batch):
-            predictions = self.model.apply(params, batch['lowres'])
-            prediction_loss = jnp.mean(optax.l2_loss(predictions, batch['targets']))
-            return prediction_loss + (1e-6 * l2(params))
+    @functools.partial(jax.jit, static_argnums=(0,))
+    def loss(self, params, batch):
+        predictions = self.model.apply(params, batch['lowres'])
+        prediction_loss = jnp.mean(optax.l2_loss(predictions, batch['targets']))
+        return prediction_loss + (1e-6 * self.l2(params))
 
         @jax.jit
         def update(params, opt_state, batch):
