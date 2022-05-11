@@ -17,6 +17,8 @@ class HaikuCompressor(BaseCompressor):
         self.params = self.avg_params = None
 
         self.model = hk.without_apply_rng(hk.transform(model_fn(self.padding)))
+        self.opt = optax.adam(1e-5)
+        self.local_devices = jax.local_devices()
 
     def _predictions_fn(self):
         return self.__predictions_fn(self.model, self.avg_params)
@@ -53,12 +55,15 @@ class HaikuCompressor(BaseCompressor):
         prediction_loss = jnp.mean(optax.l2_loss(predictions, batch['targets']))
         return prediction_loss + (1e-6 * self.l2(params))
 
-        @jax.jit
-        def update(params, opt_state, batch):
-            value, grads = jax.value_and_grad(loss)(params, batch)
-            updates, opt_state = opt.update(grads, opt_state)
-            new_params = optax.apply_updates(params, updates)
-            return value, new_params, opt_state
+    @functools.partial(jax.pmap, static_broadcasted_argnums=(0,), axis_name="devices")
+    def update(self, params, opt_state, batch):
+        value, grads = jax.value_and_grad(self.loss)(params, batch)
+        grads = jax.lax.pmean(grads, axis_name="devices")
+        value = jax.lax.pmean(value, axis_name="devices")
+        updates, opt_state = self.opt.update(grads, opt_state)
+        updates = jax.lax.pmean(updates, axis_name="devices")
+        new_params = optax.apply_updates(params, updates)
+        return value, new_params, opt_state
 
         @jax.jit
         def ema_update(params, avg_params):
