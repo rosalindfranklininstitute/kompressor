@@ -101,7 +101,7 @@ class HaikuCompressor(BaseCompressor):
             for callback in callbacks:
                 callback.on_step_start(step=step, compressor=self)
 
-            for _ in trange(0, steps_per_epoch, desc="Steps"):
+            for _ in range(0, steps_per_epoch):
                 train_batch = next(ds_train)
                 # Update params
                 loss, sharded_params, opt_state = self.update(sharded_params, opt_state, train_batch)
