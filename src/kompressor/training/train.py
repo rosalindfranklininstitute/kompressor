@@ -12,6 +12,7 @@ from callbacks.metrics import MetricsCallback
 import compressors
 import predictors
 
+os.environ["XLA_PYTHON_CLIENT_MEM_FRACTION"] = ".7"
 
 def decode_png_fn(path):
     return tf.io.decode_png(tf.io.read_file(path))
