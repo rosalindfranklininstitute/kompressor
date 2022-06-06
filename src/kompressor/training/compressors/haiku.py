@@ -109,8 +109,8 @@ class HaikuCompressor(BaseCompressor):
                 self.avg_params = self.ema_update(sharded_params, self.avg_params)
 
             for callback in callbacks:
-                params = jax.tree_map(lambda x: x[0], sharded_params)
-                self.params = params
+                self.avg_params = jax.tree_map(lambda x: x[0], self.avg_params)
+                self.params = jax.tree_map(lambda x: x[0], sharded_params)
                 loss = jax.tree_map(lambda x: x[0], loss)
                 callback.on_step_end(step=step, loss=loss, compressor=self)
 
