@@ -118,6 +118,6 @@ def process_chunks(predictions_fn, code_fn, lowres, reference_maps, chunk, paddi
             # Write the results into correct location of the full coded map
             return coded_map.at[:, y0:(y0+ph), x0:(x0+pw)].set(chunk_coded_map)
 
-        coded_maps = jax.tree_multimap(chunk_fn, coded_maps, chunk_pred_maps, reference_maps)
+        coded_maps = jax.tree_map(chunk_fn, coded_maps, chunk_pred_maps, reference_maps)
 
     return coded_maps
