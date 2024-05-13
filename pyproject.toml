@@ -1,0 +1,79 @@
+# MIT License
+#
+# Copyright (c) 2020 Joss Whittle
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "kompressor"
+version = "1.0a"
+authors = [
+    {name = "Gabryel Mason-Williams", email = "gabryel.mason-williams@rfi.ac.uk"},
+    {name = "Joss Whittle", email = "joss@chi.swan.ac.uk"},
+]
+description = "A neural compression framework built on top of JAX."
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "MIT License"}
+classifiers = [
+    'Development Status :: 2 - Pre-Alpha',
+    'License :: OSI Approved :: MIT License',
+    'Natural Language :: English',
+    'Programming Language :: Python :: 3.8',
+    'Operating System :: POSIX :: Linux',
+]
+dependencies = [
+    "jax[cuda12]",
+    "dm-haiku",
+    "tensorflow",
+    "tensorflow-gpu",
+    "h5py",
+    "numpy>=1.22.2",
+    "scipy>=1.8.0",
+    "scikit-image>=0.19.2",
+    "imageio",
+    "optax",
+    "tqdm",
+    "pandas",
+    "matplotlib"
+]
+requires-python = ">=3.8"
+dynamic = ["version"]
+
+[project.optional-dependencies]
+test = ["pytest"]
+
+[project.urls]
+Repository = "https://github.com/rosalindfranklininstitute/kompressor.git"
+
+[tool.setuptools]
+zip-safe = false
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = [
+    "tests",
+]
