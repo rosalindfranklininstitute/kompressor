@@ -21,6 +21,5 @@
 # SOFTWARE.
 
 
-from kompressor import image, volume, mapping, utils, dataloaders, greyscale
-
-VERSION = "v1.0a"
+# Import the 1D image utility functions
+from . import data
