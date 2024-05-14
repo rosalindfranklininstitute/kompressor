@@ -50,7 +50,7 @@ def decode_mrc_data_path(data_paths: DataPathFrame) -> np.array:
         If we have an Data path array of ("/tmp/0.mrc",0) with shape (5,5) this will
         return the numpy array with the shape (5,5,1)
     """
-    data = np.array(mrcfile.mmap(data_paths[0]).data[..., data_paths[1]])
+    data = np.asarray(mrcfile.mmap(data_paths[0]).data[..., data_paths[1]])
     if data.ndim == 2:
         return np.expand_dims(data, axis=-1)
     return data
