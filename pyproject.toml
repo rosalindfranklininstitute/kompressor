@@ -20,20 +20,7 @@ classifiers = [
     'Programming Language :: Python :: 3.8',
     'Operating System :: POSIX :: Linux',
 ]
-dependencies = [
-    "jax[cuda12]",
-    "dm-haiku",
-    "tensorflow",
-    "h5py",
-    "numpy>=1.22.2",
-    "scipy>=1.8.0",
-    "scikit-image>=0.19.2",
-    "imageio",
-    "optax",
-    "tqdm",
-    "pandas",
-    "matplotlib"
-]
+dynamic = ["dependencies"]
 
 [project.optional-dependencies]
 test = ["pytest"]
@@ -47,6 +34,9 @@ include-package-data = true
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}
 
 [tool.pytest.ini_options]
 testpaths = [

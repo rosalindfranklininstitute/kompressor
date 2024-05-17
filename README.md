@@ -10,13 +10,18 @@
 
 A neural compression framework built on top of JAX.
 
-## Install
+## Install as python-pip package
+To install:
+`pip install -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html`
 
-`setup.py` assumes a compatible version of JAX and JAXLib are already installed. Automated build is tested for a `cuda:11.5.1-cudnn8-devel-ubuntu20.04` environment with `jax-v0.3.1`.
+To install as dev:
+`pip install -e .[test] -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html`
+
+## Using containers
 
 A base docker image is available with CUDA and JAX installed in the `quay.io/rosalindfranklininstitute/jax:v0.3.1` Quay.io image.
 
-## Install & Run through Docker environment
+### Install & Run through Docker environment
 
 Docker image for the Kompressor dependencies are provided in the `quay.io/rosalindfranklininstitute/kompressor:<tag>` Quay.io image. Images are available for each branch of this repository (main, development, ect).
 
@@ -44,7 +49,7 @@ docker run --rm -v $(pwd):/usr/local/kompressor -w /usr/local/kompressor \
     jupyter lab --port 8889 --no-browser --notebook-dir=/usr/local/kompressor
 ```
 
-## Install & Run through Singularity environment
+### Install & Run through Singularity environment
 
 Singularity image for the Kompressor dependencies are provided in the `rosalindfranklininstitute/kompressor/kompressor:<tag>` cloud.sylabs.io image.
 
