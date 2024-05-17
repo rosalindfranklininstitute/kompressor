@@ -12,10 +12,10 @@ A neural compression framework built on top of JAX.
 
 ## Install as python-pip package
 To install:
-`pip install -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html`
+`pip install .`
 
 To install as dev:
-`pip install -e .[test] -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html`
+`pip install -e .[test]`
 
 ## Using containers
 
