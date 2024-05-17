@@ -20,36 +20,6 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+from setuptools import setup
 
-import os
-from setuptools import setup, find_packages
-
-# Attempt to import jax, haiku, and tensorflow to test that it is already installed
-import jax
-import haiku
-import tensorflow
-
-with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'requirements.txt')) as fp:
-    install_requires = fp.read().splitlines()
-
-setup(
-    version='1.0a',
-    name='kompressor',
-    description='A neural compression framework built on top of JAX.',
-    url='https://github.com/rosalindfranklininstitute/kompressor',
-    author='Joss Whittle',
-    author_email='joss.whittle@rfi.ac.uk',
-    packages=find_packages('src'),
-    package_dir={'': 'src'},
-    test_suite='tests',
-    classifiers=[
-        'Development Status :: 2 - Pre-Alpha',
-        'License :: OSI Approved :: MIT License',
-        'Natural Language :: English',
-        'Programming Language :: Python :: 3.8',
-        'Operating System :: POSIX :: Linux',
-    ],
-    license='Apache License, Version 2.0',
-    zip_safe=False,
-    install_requires=install_requires,
-)
+setup()

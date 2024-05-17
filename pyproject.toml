@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm", "pytest"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "kompressor"
+version = "1.0a"
+authors = [
+    {name = "Gabryel Mason-Williams", email = "gabryel.mason-williams@rfi.ac.uk"},
+    {name = "Joss Whittle", email = "joss@chi.swan.ac.uk"},
+]
+description = "A neural compression framework built on top of JAX."
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "MIT License"}
+classifiers = [
+    'Development Status :: 2 - Pre-Alpha',
+    'License :: OSI Approved :: MIT License',
+    'Natural Language :: English',
+    'Programming Language :: Python :: 3.8',
+    'Operating System :: POSIX :: Linux',
+]
+dynamic = ["dependencies"]
+
+[project.optional-dependencies]
+test = ["pytest"]
+
+[project.urls]
+Repository = "https://github.com/rosalindfranklininstitute/kompressor.git"
+
+[tool.setuptools]
+zip-safe = false
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}
+
+[tool.pytest.ini_options]
+testpaths = [
+    "tests",
+]
