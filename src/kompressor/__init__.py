@@ -21,6 +21,7 @@
 # SOFTWARE.
 
 
-from kompressor import image, volume, mapping, utils, dataloaders, greyscale
+from kompressor import (image, volume, mapping, utils, dataset, dataloader, transforms,
+                        models, predictors, compressors, greyscale, config, callbacks)
 
 VERSION = "v1.0a"
