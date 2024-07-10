@@ -26,6 +26,7 @@ def main():
     )
     args = parser.parse_args()
     config = kom.config.parser.get_config(args.filename.name)
+    print(config)
     if not os.path.exists(config["train"]["dataset_path"]):
         raise FileNotFoundError(
             f"Dataset at {config['train']['dataset_path']} Not Found"
@@ -33,7 +34,7 @@ def main():
     dataset_name = config["train"]["dataset_path"].split("/")[-1]
     config["train"]["dataset_name"] = dataset_name
     data_paths_and_frames = kom.dataset.mrc_dataset.get_data_paths_and_frames(
-        config["train"]["dataset_path"]
+        [config["train"]["dataset_path"]]
     )
     train_data, _ = model_selection.train_test_split(
         data_paths_and_frames,
