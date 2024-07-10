@@ -8,3 +8,5 @@ tqdm
 pandas
 matplotlib
 mrcfile
+pyyaml
+scikit-learn

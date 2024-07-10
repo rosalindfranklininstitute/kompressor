@@ -1,0 +1,20 @@
+project_name: "Test"
+general:
+  dataset_seed: 0
+  dataset_split: 0.2
+train:
+  epochs: 10
+  dataset_path: "/path/to/dataset"
+  checkpoint_directory: "/path/to/checkpoint"
+  padding: 1
+  batch_size: 64
+  levels: 1
+  seed: 0
+  learning_rate: 1e-5
+model:
+  name: "SRCNN"
+  attributes:
+    encoding_features: 300
+    encoding_kernel_size: 3
+
+
