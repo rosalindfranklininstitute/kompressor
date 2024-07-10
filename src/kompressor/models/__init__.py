@@ -1,1 +1,1 @@
-from .cnn import SRCNN
+from .cnn import SRCNN, VDSR
