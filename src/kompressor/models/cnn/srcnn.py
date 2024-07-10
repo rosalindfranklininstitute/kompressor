@@ -8,10 +8,12 @@ class SRCNN(nn.Module):
     Model based on Super-Resolution Convolutional Neural Network https://arxiv.org/pdf/1501.00092v3.pdf
     """
 
+    name: str = "SRCNN"
     encoding_features: int = 300
+    neighbourhood_features: int = 100
     encoding_kernel_size: int = 3
-    padding: int = 1
-    padding_features: int = 100
+    neighbourhood: int = 1
+
     output_kernel_size: int = 2
     patches: int = 5
     channels: int = 1
@@ -25,10 +27,12 @@ class SRCNN(nn.Module):
                 padding="VALID",
             )(low_resolution)
         )
-        for _ in range(self.padding):
+        for _ in range(self.neighbourhood):
             features = nn.activation.relu(
                 nn.Conv(
-                    features=self.padding_features, kernel_size=(1, 1), padding="VALID"
+                    features=self.neighbourhood_features,
+                    kernel_size=(1, 1),
+                    padding="VALID",
                 )(features)
             )
         features = nn.Conv(

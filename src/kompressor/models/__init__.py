@@ -1,1 +1,1 @@
-from . import srcnn
+from .cnn import SRCNN
