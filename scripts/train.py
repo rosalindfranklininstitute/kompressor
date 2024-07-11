@@ -25,7 +25,7 @@ def main():
         type=lambda x: kom.config.parser.is_valid_file(parser, x),
     )
     args = parser.parse_args()
-    config = kom.config.parser.get_config(args.filename.name)
+    config = kom.config.parser.get_config(args.filename)
     print(config)
     if not os.path.exists(config["train"]["dataset_path"]):
         raise FileNotFoundError(
