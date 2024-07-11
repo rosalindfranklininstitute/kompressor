@@ -2,11 +2,20 @@ import yaml
 import os
 
 
-def is_valid_file(parser, arg):
-    if not os.path.exists(arg):
-        parser.error(f"The file {arg} does not exist!")
+def is_valid_file(parser, file_path):
+    """
+    Check if valid file is passed.
+    Args:
+        parser: argument parser
+        file_path: path to check
+
+    Returns:
+        File path if it exists.
+    """
+    if not os.path.exists(file_path):
+        parser.error(f"File {file_path} does not exist. Please provide a valid path.")
     else:
-        return open(arg, 'r')  # return an open file handle
+        return file_path
 
 
 def get_config(path):
