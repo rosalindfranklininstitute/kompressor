@@ -112,10 +112,7 @@ def main():
     )
     options = ocp.CheckpointManagerOptions()
     orbax_checkpointer = ocp.PyTreeCheckpointer()
-    mngr = ocp.CheckpointManager(
-        args.filename,
-        orbax_checkpointer,
-        options=options)
+    mngr = ocp.CheckpointManager(args.filename, orbax_checkpointer, options=options)
     wandb.login()
     wandb.init(
         # set the wandb project where this run will be logged
@@ -124,7 +121,9 @@ def main():
         config=config,
     )
     for checkpoint in tqdm(range(config["train"]["epochs"])):
-        compressor.avg_params = mngr.restore(f"{args.filename}/{checkpoint}")["model"]["params"]
+        compressor.avg_params = mngr.restore(f"{args.filename}/{checkpoint}")["model"][
+            "params"
+        ]
         evaluate_compressor(
             eval_dataloader,
             config["train"]["levels"],
