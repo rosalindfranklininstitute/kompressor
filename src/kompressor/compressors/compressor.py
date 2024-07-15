@@ -164,7 +164,7 @@ class FlaxKompressor(Kompressor):
 
         for epoch in tqdm(range(start_step, end_step), desc="Epochs"):
             average_loss = []
-            for iters, train_batch in enumerate(tqdm(ds_train)):
+            for iters, train_batch in enumerate(ds_train):
                 for callback in callbacks:
                     callback.on_step_start(
                         step=(epoch * train_len) + iters, compressor=self
